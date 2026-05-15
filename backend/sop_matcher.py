@@ -4,7 +4,7 @@ import json
 import os
 import chromadb
 from sentence_transformers import SentenceTransformer
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # ========== 全局配置 ==========
 EMBEDDING_MODEL_NAME = "sentence-transformers/all-MiniLM-L6-v2"
