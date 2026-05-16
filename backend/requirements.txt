@@ -1,4 +1,4 @@
 chromadb
 sentence-transformers
 langchain
- langchain-text-splitters
+langchain-text-splitters
