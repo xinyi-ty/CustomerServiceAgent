@@ -2,4 +2,5 @@
 创建了五个分支:frontend、backend、sop、llm、multimodal
 
 中国人不说洋文 球球把readme写成中文
-<img width="1526" height="446" alt="image" src="https://github.com/user-attachments/assets/dc9f5ff7-3b46-4681-98b0-066d49ca6cb4" />
+
+<img width="1816" height="437" alt="image" src="https://github.com/user-attachments/assets/13a8096a-201a-4f82-9e44-5e988bad42a6" />
