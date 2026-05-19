@@ -12,9 +12,9 @@ from config import PORT, HOST
 
 # 这些模块目前还未实现，先注释掉，等同学完成后取消注释
 # from llm_client import call_llm
-# from ocr_utils import extract_text_from_image
-# from sop_matcher import get_sop_guide
-# from warranty import check_warranty
+from ocr_utils import extract_text_from_image
+from rag_simple get_sop_guide
+from warranty import check_warranty
 
 
 # 使用 lifespan 替代已废弃的 on_event

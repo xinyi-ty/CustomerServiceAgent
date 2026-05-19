@@ -290,3 +290,64 @@ def ask_sop(question: str) -> str:
     chunks = retrieve(question)
     answer = generate_answer(question, chunks)
     return answer
+
+# ========================= 9. 适配 main.py 的接口 =========================
+
+def get_sop_guide(issue_category: str, urgency_level: str) -> str:
+    """
+    适配 main.py 的接口：根据问题类别和紧急度返回 SOP 指导
+    
+    Args:
+        issue_category: 问题类别（如 "Missing_Part", "Overheating"）
+        urgency_level: 紧急度（"Low", "Medium", "High"）
+    
+    Returns:
+        SOP 指导文本
+    """
+    # 构建查询问题
+    query = f"{issue_category} {urgency_level}"
+    
+    # 高紧急度快速响应
+    if urgency_level == "High":
+        high_priority_response = "【紧急处置】请立即切断设备电源，远离现场，等待专业人员处理。"
+        try:
+            detailed = ask_sop(f"{issue_category} 紧急处置")
+            if detailed and len(detailed) > 10 and "未找到" not in detailed:
+                return f"{high_priority_response}\n\n详细处置:\n{detailed}"
+        except:
+            pass
+        return high_priority_response
+    
+    # 正常检索
+    try:
+        answer = ask_sop(query)
+        # 如果返回的是错误信息，返回默认值
+        if "未找到" in answer or len(answer) < 5:
+            return f"【处理方案】您的 {issue_category} 问题已收到，技术人员将尽快与您联系。"
+        return answer
+    except Exception as e:
+        print(f"SOP 检索失败: {e}")
+        return f"【处理方案】您的 {issue_category} 问题已收到，技术人员将尽快与您联系。"
+
+
+# ========================= 10. 测试代码 =========================
+if __name__ == "__main__":
+    # 首次运行需要构建索引
+    print("=" * 50)
+    print("RAG 模块测试")
+    print("=" * 50)
+    
+    # 构建索引（首次运行或知识库更新时执行）
+    build_index(force_rebuild=True)
+    
+    # 测试检索
+    test_questions = [
+        "Missing_Part Low",
+        "Overheating High",
+        "设备冒烟怎么办？"
+    ]
+    
+    for q in test_questions:
+        print(f"\n问题: {q}")
+        answer = ask_sop(q)
+        print(f"回答: {answer}")
