@@ -40,9 +40,13 @@ def extract_text_from_image(image_bytes: bytes) -> str:
 
 def extract_text_from_video(video_bytes: bytes) -> str:
     """
-    视频抽第一帧做OCR
+    每秒抽取一帧视频画面进行 OCR，返回合并后的文本字符串。
     """
     import tempfile
+    import os
+    import cv2
+
+    tmp_path = None
 
     try:
         with tempfile.NamedTemporaryFile(delete=False, suffix=".mp4") as tmp:
@@ -50,15 +54,50 @@ def extract_text_from_video(video_bytes: bytes) -> str:
             tmp_path = tmp.name
 
         cap = cv2.VideoCapture(tmp_path)
-        success, frame = cap.read()
-        cap.release()
 
-        if not success:
+        if not cap.isOpened():
             return ""
 
-        _, buffer = cv2.imencode(".jpg", frame)
-        return extract_text_from_image(buffer.tobytes())
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if not fps or fps <= 0:
+            fps = 1
+
+        frame_interval = int(fps)
+        frame_index = 0
+        texts = []
+
+        while True:
+            success, frame = cap.read()
+            if not success:
+                break
+
+            if frame_index % frame_interval == 0:
+                ok, buffer = cv2.imencode(".jpg", frame)
+                if ok:
+                    text = extract_text_from_image(buffer.tobytes())
+                    if text:
+                        texts.append(text)
+
+            frame_index += 1
+
+        cap.release()
+
+        # 去重，避免每秒文字重复太多
+        unique_texts = []
+        seen = set()
+
+        for text in texts:
+            cleaned = text.strip()
+            if cleaned and cleaned not in seen:
+                seen.add(cleaned)
+                unique_texts.append(cleaned)
+
+        return "\n".join(unique_texts)
 
     except Exception as e:
         print(f"[VIDEO OCR ERROR] {e}")
         return ""
+
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
