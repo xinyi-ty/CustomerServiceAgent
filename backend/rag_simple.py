@@ -28,6 +28,9 @@ import dashscope
 from dashscope import TextEmbedding
 from openai import OpenAI
 
+from sentence_transformers import SentenceTransformer
+
+
 # ========================= 1. 加载环境变量 =========================
 # 尝试多个可能的 .env 文件位置，确保无论从哪个目录运行都能找到
 possible_env_paths = [
@@ -199,14 +202,30 @@ def build_index(force_rebuild=False):
     # 批量向量化
     print(f"正在计算 {len(all_chunks)} 个文本块的向量（调用千问 API）...")
     embeddings = _get_embeddings_batch(all_chunks)
+    # 过滤空文本和无效 embedding
+    filtered_chunks = []
+    filtered_embeddings = []
+    filtered_ids = []
+    for i, (chunk, emb) in enumerate(zip(all_chunks, embeddings)):
+        if chunk and chunk.strip() and emb is not None:
+            filtered_chunks.append(chunk)
+            filtered_embeddings.append(emb)
+            filtered_ids.append(f"chunk_{i}")
+
+    if not filtered_chunks:
+        print("没有有效的文本块和向量可存入索引")
+        return
 
     # 存入 ChromaDB
     collection.add(
-        ids=ids,
-        documents=all_chunks,
-        embeddings=embeddings
+        ids=filtered_ids,
+        documents=filtered_chunks,
+        embeddings=filtered_embeddings
     )
-    print(f"索引构建完成，共 {len(all_chunks)} 个片段")
+    print(f"索引构建完成，共 {len(filtered_chunks)} 个片段")
+
+   
+
 
 
 # ========================= 6. 检索 =========================
@@ -275,8 +294,7 @@ def generate_answer(question: str, retrieved_chunks: list) -> str:
         temperature=0.1,  # 低温度让回答更保守、更基于事实
         max_tokens=500
     )
-    return response.choices[0].message.content
-
+    return response.choices[0].message.content or "抱歉，未能生成回答，请稍后再试。"
 
 # ========================= 8. 统一入口 =========================
 
