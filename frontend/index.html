@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<link rel="stylesheet" href="./style.css"
+<header class="header">
+    <div class="header-left">
+        <div class="logo">
+            🤖
+        </div>
+
+        <div class="header-group">
+            <h1>
+                智能售后工单系统
+            </h1>
+            <p>
+                AI Comlaint Assistant
+            </p>
+        </div>
+
+    </div>
+</header>
+
+<!-- ================= 问题输入模块开始 ================= -->
+<section class="card">
+    <h2 class="section-title">
+        1.问题输入
+    </h2>
+
+    <!-- 左右双栏布局-->
+    <div class="input-layout">
+        <div class="left-panel">
+            <label><!-- 给输入框、上传框、textarea 写“说明文字”-->
+                问题描述
+                <span>*</span> <!-- 包住一小段文字-->
+            </label>
+
+            <!-- 用户输入框-->
+            <div class="textarea-wrapper">
+
+                <textarea
+                id="userText"
+                placeholder="请详细描述您遇到的问题...">
+                </textarea>
+
+                <div class="counter">
+
+                    0/1000
+
+                </div>
+
+</div>
+
+            <!-- 提交按钮 -->
+            <button id="submitBtn">
+                ✈ 提交工单
+            </button>
+
+        </div>
+
+        <!-- 上传模块 -->
+        <div class="right-panel">
+
+            <label>
+                上传图片 / 视频
+            </label>
+            <div class="upload-box">
+                <div class="upload-icon">
+                    ☁
+                </div>
+                <h3>
+                    点击或拖拽文件到此处
+                </h3>
+                <p>
+                    支持图片、视频格式,大小不超过50MB
+                </p>
+                <button class="upload-btn">
+                    选择文件
+                </button>
+            </div>
+        </div>
+    </div>
+
+</section>
+<!-- ================= 问题输入模块结束 ================= -->
