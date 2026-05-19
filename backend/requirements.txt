@@ -1,11 +1,21 @@
-2026-05-17
-fastapi==0.115.0
-uvicorn[standard]==0.30.0
-python-multipart==0.0.12
-pydantic==2.9.0
-python-dotenv==1.0.0
-requests==2.32.0
+#2026-05-17
+#多模态依赖
+#fastapi==0.115.0
+#uvicorn[standard]==0.30.0
+#python-multipart==0.0.12
+#pydantic==2.9.0
+#python-dotenv==1.0.0
+#requests==2.32.0
+
+
+#RAG依赖
 chromadb
 sentence-transformers
 langchain
 langchain-text-splitters
+chromadb>=0.4.22
+dashscope>=1.14.0   # 阿里云千问 SDK
+openai>=1.0.0       # 用于 deepseek 兼容 OpenAI API
+python-dotenv>=1.0.0
+app
+Form
