@@ -12,7 +12,7 @@ with open(_PROMPT_PATH, "r", encoding="utf-8") as f:
 _client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 
 
-def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
+def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
     """
     参数：
         user_text: 用户输入的文本
@@ -50,7 +50,8 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
             ],
             temperature=0.3,
         )
-        raw = response.choices[0].message.content.strip()
+        content = response.choices[0].message.content
+        raw = content.strip() if content is not None else ""
 
         # 去除可能的 markdown 代码块标记
         if raw.startswith("```"):

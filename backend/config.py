@@ -1,21 +1,22 @@
 import os
 from dotenv import load_dotenv
-#
+
 #加载 .env 文件
 load_dotenv()
 #
 #LLM 配置
-LLM_API_KEY: str = os.getenv("LLM_API_KEY", "")
-LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://open.bigmodel.cn/api/paas/v4/")
+
+LLM_API_KEY = os.getenv("DEEPSEEK_API_KEY")
+LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
 LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "glm-4-flash")
 #
 #数据库配置
 DATABASE_PATH: str = os.getenv("DATABASE_PATH", "./data/tickets.db")
 
-文件上传配置
+#文件上传配置
 UPLOAD_DIR: str = os.getenv("UPLOAD_DIR", "./uploads")
 
-服务配置
+#服务配置
 HOST: str = os.getenv("HOST", "0.0.0.0")
 PORT: int = int(os.getenv("PORT", "8000"))
 
