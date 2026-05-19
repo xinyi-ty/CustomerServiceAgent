@@ -1,9 +1,22 @@
 # rag_simple.py
 """
-基于千问 embedding + DeepSeek 生成的 RAG 简单实现
-- 支持从 .txt 文件构建向量索引
-- 支持查询检索并生成回答
-- 所有代码集中在一个文件中，便于理解与调试
+基于千问 Embedding + DeepSeek 的 RAG 检索增强生成模块
+=======================================================================
+功能：
+    1. 读取指定目录下的所有 .txt 文件作为 SOP 知识库
+    2. 将长文本切分成小块，使用千问 text-embedding-v4 模型向量化
+    3. 将向量存入 ChromaDB 数据库，构建索引
+    4. 对用户问题，先检索最相关的知识块，再调用 DeepSeek 生成回答
+
+依赖环境变量（.env 文件）：
+    DASHSCOPE_API_KEY      # 阿里云千问 API 密钥
+    DEEPSEEK_API_KEY       # DeepSeek API 密钥
+    DEEPSEEK_BASE_URL      # DeepSeek API 地址（默认 https://api.deepseek.com/v1）
+
+使用方法：
+    from rag_simple import build_index, ask_sop
+    build_index(force_rebuild=True)   # 首次使用或知识库更新时调用
+    answer = ask_sop("你的问题")
 """
 
 import os
@@ -15,61 +28,76 @@ import dashscope
 from dashscope import TextEmbedding
 from openai import OpenAI
 
-# 加载环境变量（假设 .env 在项目根目录）
-load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
+# ========================= 1. 加载环境变量 =========================
+# 尝试多个可能的 .env 文件位置，确保无论从哪个目录运行都能找到
+possible_env_paths = [
+    os.path.join(os.path.dirname(__file__), '..', '.env'),  # 项目根目录
+    os.path.join(os.path.dirname(__file__), '.env'),  # backend 目录下
+    '.env'  # 当前工作目录
+]
+env_loaded = False
+for env_path in possible_env_paths:
+    if os.path.exists(env_path):
+        load_dotenv(dotenv_path=env_path, override=True)
+        print(f"已加载环境变量: {env_path}")
+        env_loaded = True
+        break
+if not env_loaded:
+    print("警告: 未找到 .env 文件，请确保在项目根目录或 backend 目录下创建 .env 文件")
 
-# ======================== 配置区域 ========================
-# 请根据需要修改以下参数
+# ========================= 2. 配置参数 =========================
+SOP_DIR = "data/sop"  # 存放 .txt 知识库文件的目录（相对路径）
+CHROMA_PERSIST_DIR = "./chroma_db"  # ChromaDB 持久化目录
+COLLECTION_NAME = "sop_knowledge"  # ChromaDB 集合名称
 
-# 知识库目录：存放 .txt 文件的文件夹路径（绝对或相对路径）
-SOP_DIR = "data/sop"  # 相对于当前文件的目录
+CHUNK_SIZE = 500  # 文本分块大小（字符数）
+CHUNK_OVERLAP = 50  # 分块之间的重叠字符数，保持上下文连贯
+TOP_K = 3  # 检索时返回最相关的段落数量
 
-# ChromaDB 持久化目录
-CHROMA_PERSIST_DIR = "./chroma_db"
-COLLECTION_NAME = "sop_knowledge"
-
-# 文本分块参数
-CHUNK_SIZE = 500  # 每块最大字符数
-CHUNK_OVERLAP = 50  # 块之间重叠字符数
-
-# 检索参数
-TOP_K = 3  # 返回最相关的段落数
-
-# 模型配置
 EMBEDDING_MODEL = "text-embedding-v4"  # 千问 embedding 模型
 DEEPSEEK_MODEL = "deepseek-chat"  # DeepSeek 对话模型
 
-# ======================== 初始化全局对象 ========================
-# ChromaDB 客户端（延迟初始化）
-_chroma_client = None
-_collection = None
+# ========================= 3. 全局客户端初始化 =========================
+_chroma_client = None  # ChromaDB 客户端（延迟初始化）
+_collection = None  # ChromaDB 集合（延迟初始化）
+_deepseek_client = None  # DeepSeek OpenAI 客户端（延迟初始化）
 
-# DeepSeek 客户端
-_deepseek_client = None
+# 设置千问 API Key
+qwen_api_key = os.getenv("DASHSCOPE_API_KEY")
+if qwen_api_key:
+    dashscope.api_key = qwen_api_key
+    print("已设置 dashscope.api_key")
+else:
+    print("错误: 未找到 DASHSCOPE_API_KEY 环境变量，请检查 .env 文件")
 
-# 千问 API Key 设置
-dashscope.api_key = os.getenv("DASHSCOPE_API_KEY")
+# 检查 DeepSeek API Key（稍后在调用时还会检查一次）
+deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
+deepseek_base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
+if not deepseek_api_key:
+    print("错误: 未找到 DEEPSEEK_API_KEY 环境变量，请检查 .env 文件")
 
 
-# ======================== 辅助函数 ========================
+# ========================= 4. 辅助函数 =========================
 
 def _get_chroma_collection():
-    """获取 ChromaDB 集合（若不存在则创建）"""
+    """获取 ChromaDB 集合（如果不存在则自动创建）"""
     global _chroma_client, _collection
     if _chroma_client is None:
         _chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
     if _collection is None:
-        # get_or_create_collection 会自动创建不存在的集合
         _collection = _chroma_client.get_or_create_collection(name=COLLECTION_NAME)
     return _collection
 
 
 def _get_embedding(text: str):
-    """调用千问 embedding API 获取单个文本的向量"""
-    resp = TextEmbedding.call(
-        model=EMBEDDING_MODEL,
-        input=text
-    )
+    """
+    调用千问 Embedding API，将单个文本转换为向量
+    :param text: 输入文本
+    :return: 浮点数列表（向量）
+    """
+    if not dashscope.api_key:
+        raise RuntimeError("dashscope.api_key 未设置，请检查环境变量 DASHSCOPE_API_KEY")
+    resp = TextEmbedding.call(model=EMBEDDING_MODEL, input=text)
     if resp.status_code == 200:
         return resp.output["embeddings"][0]["embedding"]
     else:
@@ -77,13 +105,15 @@ def _get_embedding(text: str):
 
 
 def _get_embeddings_batch(texts: list):
-    """批量获取向量（用于构建索引，效率更高）"""
-    resp = TextEmbedding.call(
-        model=EMBEDDING_MODEL,
-        input=texts
-    )
+    """
+    批量获取向量（用于索引构建，减少 API 调用次数）
+    :param texts: 文本列表
+    :return: 向量列表，顺序与输入一致
+    """
+    if not dashscope.api_key:
+        raise RuntimeError("dashscope.api_key 未设置，请检查环境变量 DASHSCOPE_API_KEY")
+    resp = TextEmbedding.call(model=EMBEDDING_MODEL, input=texts)
     if resp.status_code == 200:
-        # 按原始顺序整理 embeddings
         embeds = [None] * len(texts)
         for item in resp.output["embeddings"]:
             embeds[item["text_index"]] = item["embedding"]
@@ -93,39 +123,41 @@ def _get_embeddings_batch(texts: list):
 
 
 def _get_deepseek_client():
-    """获取 DeepSeek OpenAI 兼容客户端"""
+    """获取 DeepSeek OpenAI 兼容客户端（单例模式）"""
     global _deepseek_client
     if _deepseek_client is None:
-        api_key = os.getenv("DEEPSEEK_API_KEY")
-        base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
-        if not api_key:
+        if not deepseek_api_key:
             raise ValueError("请在 .env 中设置 DEEPSEEK_API_KEY")
-        _deepseek_client = OpenAI(api_key=api_key, base_url=base_url)
+        _deepseek_client = OpenAI(api_key=deepseek_api_key, base_url=deepseek_base_url)
     return _deepseek_client
 
 
-# ======================== 索引构建 ========================
+# ========================= 5. 索引构建 =========================
 
 def build_index(force_rebuild=False):
     """
-    读取 SOP_DIR 下的所有 .txt 文件，分块、向量化并存入 ChromaDB
-    :param force_rebuild: 是否删除已有索引并重建
+    读取 SOP_DIR 下的所有 .txt 文件，切分、向量化后存入 ChromaDB
+    :param force_rebuild: 是否强制删除现有索引并重新构建
     """
+    print("[build_index] 开始构建索引...")
+
+    # 如果需要强制重建，先删除整个集合
+    if force_rebuild:
+        tmp_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+        try:
+            tmp_client.delete_collection(COLLECTION_NAME)
+            print(f"已删除旧集合 {COLLECTION_NAME}")
+        except Exception as e:
+            print(f"删除集合时出错（可能是集合不存在）: {e}")
+        # 重置全局变量，让下一次 _get_chroma_collection 重新创建集合
+        global _collection, _chroma_client
+        _collection = None
+        _chroma_client = None
+
+    # 获取集合（如果不存在则自动创建）
     collection = _get_chroma_collection()
 
-    # 如果要求强制重建，删除现有集合
-    if force_rebuild:
-        # ChromaDB 删除集合需要通过 client
-        client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
-        if COLLECTION_NAME in [c.name for c in client.list_collections()]:
-            client.delete_collection(COLLECTION_NAME)
-            print(f"已删除旧集合 {COLLECTION_NAME}")
-            # 重新获取新集合
-            _collection = client.get_or_create_collection(COLLECTION_NAME)
-        else:
-            _collection = collection
-
-    # 获取所有 txt 文件路径
+    # 获取所有 .txt 文件路径
     txt_dir = os.path.join(os.path.dirname(__file__), SOP_DIR)
     if not os.path.exists(txt_dir):
         print(f"目录不存在: {txt_dir}，请先创建并放入 .txt 文件")
@@ -145,7 +177,7 @@ def build_index(force_rebuild=False):
                 raw_docs.append(content)
                 print(f"已读取: {path} ({len(content)} 字符)")
 
-    # 分块
+    # 文本分块
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=CHUNK_SIZE,
         chunk_overlap=CHUNK_OVERLAP,
@@ -164,7 +196,7 @@ def build_index(force_rebuild=False):
     # 生成唯一 ID
     ids = [f"chunk_{i}" for i in range(len(all_chunks))]
 
-    # 批量获取向量
+    # 批量向量化
     print(f"正在计算 {len(all_chunks)} 个文本块的向量（调用千问 API）...")
     embeddings = _get_embeddings_batch(all_chunks)
 
@@ -177,25 +209,23 @@ def build_index(force_rebuild=False):
     print(f"索引构建完成，共 {len(all_chunks)} 个片段")
 
 
-# ======================== 检索函数 ========================
+# ========================= 6. 检索 =========================
 
 def retrieve(query: str, top_k: int = TOP_K):
     """
     根据用户问题，从向量库中检索最相关的 SOP 段落
-    :param query: 用户输入的文本
-    :param top_k: 返回结果数量
-    :return: 列表，每个元素为字典包含 content 和 distance
+    :param query: 用户输入的问题
+    :param top_k: 返回的结果数量
+    :return: 列表，每个元素为字典，包含 content、id、distance
     """
     collection = _get_chroma_collection()
-    # 将问题转换为向量
+    # 将问题转为向量
     query_vec = _get_embedding(query)
-
-    # 在 ChromaDB 中查询
+    # 在 ChromaDB 中查询最相似的 top_k 个文档
     results = collection.query(
         query_embeddings=[query_vec],
         n_results=top_k
     )
-
     retrieved = []
     if results['documents'] and results['documents'][0]:
         for i, doc in enumerate(results['documents'][0]):
@@ -207,19 +237,19 @@ def retrieve(query: str, top_k: int = TOP_K):
     return retrieved
 
 
-# ======================== 生成回答 ========================
+# ========================= 7. 生成回答 =========================
 
 def generate_answer(question: str, retrieved_chunks: list) -> str:
     """
     基于检索到的知识块，调用 DeepSeek 生成最终回答
     :param question: 原始用户问题
-    :param retrieved_chunks: retrieve() 返回的列表
+    :param retrieved_chunks: retrieve 函数返回的列表
     :return: 回答字符串
     """
     if not retrieved_chunks:
         context = "未找到相关的 SOP 知识。"
     else:
-        # 将多个段落用换行分隔
+        # 将多个段落用换行分隔，作为上下文
         context = "\n\n".join([chunk["content"] for chunk in retrieved_chunks])
 
     system_prompt = """你是一个专业的客服助手。请严格依据下方提供的【参考知识】回答用户的问题。
@@ -242,20 +272,21 @@ def generate_answer(question: str, retrieved_chunks: list) -> str:
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
         ],
-        temperature=0.1,
+        temperature=0.1,  # 低温度让回答更保守、更基于事实
         max_tokens=500
     )
     return response.choices[0].message.content
 
 
-# ======================== 统一入口 ========================
+# ========================= 8. 统一入口 =========================
 
 def ask_sop(question: str) -> str:
     """
-    主入口：输入用户问题，输出基于 SOP 知识库的回复
+    主入口函数：输入用户问题，输出基于 SOP 知识库的回复
+    内部自动完成 检索 -> 生成 的全流程
+    :param question: 用户问题（字符串）
+    :return: 回答（字符串）
     """
-    # 1. 检索
     chunks = retrieve(question)
-    # 2. 生成
     answer = generate_answer(question, chunks)
     return answer
