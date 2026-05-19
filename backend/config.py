@@ -6,10 +6,17 @@ load_dotenv()
 #
 #LLM 配置
 
-LLM_API_KEY = os.getenv("DEEPSEEK_API_KEY")
-LLM_BASE_URL: str = os.getenv("LLM_BASE_URL", "https://api.deepseek.com/v1")
-LLM_MODEL_NAME: str = os.getenv("LLM_MODEL_NAME", "glm-4-flash")
-#
+
+# DeepSeek 配置
+DEEPSEEK_API_KEY = "sk-212b8b835bb94e6c8b8d975ca389748a"
+DEEPSEEK_BASE_URL = "https://api.deepseek.com"  # DeepSeek 官方 API 地址
+DEEPSEEK_MODEL_NAME = "deepseek-chat"  # 或 "deepseek-coder"
+
+# 如果使用其他 OpenAI 兼容的 API，可以修改为对应的地址
+# DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
+
+
+
 #数据库配置
 DATABASE_PATH: str = os.getenv("DATABASE_PATH", "./data/tickets.db")
 
