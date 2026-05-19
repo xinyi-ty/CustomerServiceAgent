@@ -1,11 +1,29 @@
 def check_warranty(sn_code: str) -> str:
     """
-    参数：从图片 OCR 提取或用户提供的 SN 码
-    返回值：
-        "In_Warranty"    -- 在保
-        "Out_of_Warranty" -- 过保
-        "Unknown"        -- 无法判断（如 SN 为空或格式错误）
+    输入：SN码
+    输出：
+    In_Warranty / Out_of_Warranty / Unknown
     """
-    # TODO: 实现模拟保修数据库（可读本地 JSON 或写死在代码中）
-    # 示例规则：若 SN 前两位是 24 或 25 为在保，否则过保
-    pass
+    try:
+        if not sn_code:
+            return "Unknown"
+
+        sn_code = sn_code.strip().upper()
+        sn_code = sn_code.replace(" ", "")
+
+        # OCR常见错误修正
+        sn_code = sn_code.replace("O", "0")
+
+        if len(sn_code) < 2:
+            return "Unknown"
+
+        prefix = sn_code[:2]
+
+        if prefix in ["24", "25"]:
+            return "In_Warranty"
+        else:
+            return "Out_of_Warranty"
+
+    except Exception as e:
+        print(f"[WARRANTY ERROR] {e}")
+        return "Unknown"
