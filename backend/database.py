@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any,Optional
 from datetime import datetime
 from config import DATABASE_PATH
 
@@ -68,7 +68,7 @@ def get_all_tickets() -> List[Dict[str, Any]]:
     
     return tickets
 
-def get_ticket_by_id(ticket_id: str) -> Dict[str, Any]:
+def get_ticket_by_id(ticket_id: str) -> Optional[Dict[str, Any]]:
     """根据ID获取单个工单"""
     conn = get_db_connection()
     cursor = conn.cursor()
