@@ -168,3 +168,84 @@ textarea{
     position:relative;
 
 }
+
+/* ================= 识别结果模块 ================= */
+.result-box{
+    text-align: center;/*文本居中*/
+    padding:50px 20px;
+}
+
+/* AI图标 */
+.robot-icon{
+    font-size: 72px;
+    color:#93c5fd;
+    margin-bottom: 20px;
+}
+
+/* 标题 */
+.result-box h3{
+    font-size: 34px;
+    color: #172554;
+    margin-bottom: 16px;
+}
+/* 提示文字 */
+.result-box p{
+    font-size: 18px;
+    color: #6b7280;
+    margin-bottom: 35px;
+}
+
+/* 标签整体布局 */
+.feature-row{
+    display: flex;
+    justify-self: center;/*标签水平居中*/
+
+    gap:22px;/*标签之间距离*/
+    flex-wrap:wrap;/*标签过多时换行显示*/
+}
+
+/* 单个标签卡片 */
+.feature-card{
+    display: flex;/*图标与文字水平排列*/
+    align-items: center;/*图文水平居中*/
+    gap :10px;
+    background:#ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    padding: 18px 28px;
+    min-width: 165px;
+    font-size: 22px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);;
+
+}
+
+/* 标签文字 */
+.feature-card span{
+    font-size: 18px;
+    color:#172554;
+    font-weight: 600;
+}
+
+/* ================= 历史工单记录模块 ================= */
+.history-box{
+    text-align: center;
+    padding: 55px 20px;
+}
+/* 图标 */
+.history-icon{
+    font-size: 70px;
+    color:#cbd5e1;
+    margin-bottom: 18px;
+}
+
+/* 主标题 */
+.history-box h3{
+    font-size: 34px;
+    color: #475569;
+    margin-bottom: 12px;
+}
+/* 提示文字 */
+.history-box p{
+    font-size: 18px;
+    color: #94a3b8;
+}
