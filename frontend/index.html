@@ -1,9 +1,11 @@
 <!DOCTYPE html>
-<link rel="stylesheet" href="./style.css"
+<link rel="stylesheet" href="./style.css">
+
+    
 <header class="header">
     <div class="header-left">
-        <div class="logo">
-            🤖
+            <div class="logo">
+                🤖
         </div>
 
         <div class="header-group">
@@ -37,8 +39,8 @@
 
                 <textarea
                 id="userText"
-                placeholder="请详细描述您遇到的问题...">
-                </textarea>
+                placeholder="请详细描述您遇到的问题..."
+                ></textarea>
 
                 <div class="counter">
 
@@ -46,7 +48,7 @@
 
                 </div>
 
-</div>
+            </div>
 
             <!-- 提交按钮 -->
             <button id="submitBtn">
@@ -71,9 +73,32 @@
                 <p>
                     支持图片、视频格式,大小不超过50MB
                 </p>
-                <button class="upload-btn">
+
+                <!-- 文件上传输入框(隐藏) -->
+                <input
+                    type="file"
+                    id="uploadInput"
+                    hidden
+                >
+
+                <!-- 选择文件按钮 -->
+
+                <button
+                    class="upload-btn"
+                    id="uploadBtn"
+                >
+
                     选择文件
+
                 </button>
+
+                <!-- 上传结果显示 -->
+
+                <p id="fileInfo">
+
+                未选择文件
+
+                </p>
             </div>
         </div>
     </div>
@@ -90,7 +115,10 @@
     </h2>
 
     <!-- 内容区域-->
-    <div class="result-box">
+    <div 
+    class="result-box"
+    id="resultContent"
+    >
         <div class="robot-icon">
             🤖
         </div>
@@ -134,7 +162,7 @@
 
                 🛡
 
-                <span>保修状态</span>
+                <span>工单ID</span>
 
             </div>
         </div>
@@ -162,3 +190,10 @@
     </div>
 
 </section>
+
+<!-- 连接JS文件 -->
+
+<script src="app.js"></script>
+
+</body>
+</html>
