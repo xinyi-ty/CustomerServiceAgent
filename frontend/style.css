@@ -1,0 +1,170 @@
+/*=====header=====*/
+
+/*整个顶部导航栏*/
+.header{
+    display: flex;/*让左右区域水平排列*/
+    justify-content: space-between;/*左右拉开距离*/
+    align-items: center;/*垂直居中*/
+    margin-bottom: 32px;/*底部留白*/
+}
+
+/*左侧容器logo + 标题*/
+.header-left{
+    display: flex;
+    align-items: center;
+
+    gap:18px;/*子元素间距*/
+}
+
+/*logo*/
+.logo{
+    width:80px;
+    height:70px;
+    border-radius: 50%;/*变圆形*/
+    background:#2563eb ;
+    color: white;
+    font-size: 28px;/*控制文字有多大*/
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/*标题*/
+.header-group h1{
+    font-size: 32px;
+    font-weight: 700;
+    color: #111827;
+}
+
+/*副标题*/
+.hesder-group p{
+    margin-top: 4px;/*元素和别人之间的距离*/
+
+    color: #6b7280;
+    font-size: 18px;
+}
+
+/* ================= 卡片通用样式 ================= */
+.card{
+    background: white;
+    border-radius:18px;/*将元素的四个角设置为半径为 18 像素的圆角*/
+    padding: 2px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.06);/**给元素添加一层轻微的、向下的半透明阴影效果**/
+/****这种参数组合产生的是极轻微的悬浮感，类似卡片轻微浮在页面上**/
+}
+
+/* 板块标题 */
+.section-title{
+    font-size: 32px;
+    margin-bottom: 18px;
+    color: #172554;
+}
+
+/* ================= 双栏布局 ================= */
+.input-layout{
+    display: flex;
+    gap: 40px;/*** 表示子元素之间的间距为 40 像素***/
+    align-items: flex-start;/*子元素顶部对齐*/
+
+}
+
+/* 左右区域平均分 */
+.left-panel,
+.right-panel{
+    flex: 1;/**左右区域平均分配剩余空间**/
+}
+
+/*label*/
+label{
+    display: block;/*标签独占一行*/
+    font-size: 22px;
+    font-weight: 600;/*加粗*/
+    margin-bottom: 18px;
+
+}
+
+/* 红色星号 */
+label span{
+    color: red;
+}
+
+/* textarea */
+textarea{
+    width: 100%;/*占满父元素宽度*/
+    height: 60px;/*固定高度*/
+    border: 1px solid #d1d5db;/*边框颜色*/
+    border-radius: 14px;/*将元素的四个角设置为半径为 14 像素的圆角*/
+    padding: 18px;
+    font-size: 18px;
+    resize: none;/*禁止用户调整大小*/
+
+}
+
+/* 字数统计 */
+.counter{
+    text-align: right;/*文本右对齐*/
+    font-size: 14px;
+    color: #6b7280;
+    position:absolute;
+    right:14px;
+    bottom:12px;
+}
+
+
+/* 提交按钮 */
+#submitBtn{
+    margin-top: 0px;
+    background: #2563eb;
+    color: white;
+    border:none ;/*去掉默认边框*/
+    border-radius: 12px;
+    padding: 14px 30px;
+    font-size: 18px;
+    cursor: pointer;/*鼠标暂停时候指为手形*/
+    align-items: center;
+}
+
+/* 上传图标 */
+.upload-icon{
+    font-size: 42px;
+    color: #6b7280;
+}
+
+/* 上传按钮 */
+.upload-btn{
+    margin-top: 20px;
+    background: white;
+    border: 1px solid #2563eb;
+    color: #2563eb;
+    padding: 12px 24px;
+    border-radius: 12px;
+}
+
+/* 上传区域 */
+
+.upload-box{
+
+    min-height: 220px;
+
+    border:2px dashed #d1d5db;
+
+    border-radius:16px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    justify-content:center;
+
+    align-items:center;
+
+}
+
+/* textarea容器 */
+
+.textarea-wrapper{
+
+    position:relative;
+
+}
