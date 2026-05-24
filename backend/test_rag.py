@@ -1,4 +1,4 @@
-# test_rag.py
+# test_rag.py,用于测试RAG功能,暂时保留
 """
 测试 RAG 功能的独立脚本
 """
