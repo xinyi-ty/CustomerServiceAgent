@@ -71,6 +71,3 @@ auto_reply_sent（自动回复）编写规范：
 1. 客诉为简单配件缺失 → 定级 low，issue_category = Missing_Part，business_impact = Normal，路由至 frontline_worker
 <<<<<<< HEAD
 2. 客诉为核心设备运行冒烟并附带视频/图片 → 定级 high，issue_category = Hardware_Thermal_Runaway，business_impact = Safety_Hazard，路由至 general_manager_dashboard
-=======
-2. 客诉为核心设备运行冒烟并附带视频/图片 → 定级 high，issue_category = Hardware_Thermal_Runaway，business_impact = Safety_Hazard，路由至 general_manager_dashboard
->>>>>>> hupisha-branch
