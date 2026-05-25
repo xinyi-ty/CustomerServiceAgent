@@ -1,10 +1,5 @@
 import json
 import os
-<<<<<<< HEAD
-from typing import Dict, Any
-from openai import OpenAI
-from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL_NAME
-=======
 from typing import Dict
 from openai import OpenAI
 from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL_NAME
@@ -16,17 +11,8 @@ with open(_PROMPT_PATH, "r", encoding="utf-8") as f:
 
 _client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 
->>>>>>> hupisha-branch
 
-# 加载 prompt.txt 作为系统提示词
-_PROMPT_PATH = os.path.join(os.path.dirname(__file__), "prompt.txt")
-with open(_PROMPT_PATH, "r", encoding="utf-8") as f:
-    SYSTEM_PROMPT = f.read()
-
-_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
-
-
-def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
+def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
     """
     参数：
         user_text: 用户输入的文本
@@ -48,40 +34,23 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
         }
     异常处理：若调用失败或解析失败，返回默认低优先级结果。
     """
-<<<<<<< HEAD
-    # 构造用户消息
-=======
     # 构造用户消息cl
->>>>>>> hupisha-branch
     user_message = f"【客户投诉内容】\n{user_text}"
     if ocr_text:
         user_message += f"\n\n【图片/视频 OCR 识别结果】\n{ocr_text}"
 
     try:
         response = _client.chat.completions.create(
-<<<<<<< HEAD
-            model=DEEPSEEK_MODEL_NAME,
-            # DeepSeek 推荐参数配置
-=======
             model=LLM_MODEL_NAME,
             # TODO: 支持多轮对话（在 messages 中追加历史 assistant/user 消息）
             # TODO: prompt 复用——将 SYSTEM_PROMPT 缓存，避免每次调用都重新读取
->>>>>>> hupisha-branch
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message},
             ],
             temperature=0.3,
-<<<<<<< HEAD
-            max_tokens=2000,  # DeepSeek 建议设置 max_tokens
-            stream=False,  # 非流式输出
-        )
-        content = response.choices[0].message.content
-        raw = content.strip() if content is not None else ""
-=======
         )
         raw = response.choices[0].message.content.strip()
->>>>>>> hupisha-branch
 
         # 去除可能的 markdown 代码块标记
         if raw.startswith("```"):
@@ -109,11 +78,7 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
             },
         }
     except Exception as e:
-<<<<<<< HEAD
-        print(f"DeepSeek API 调用失败: {e}")
-=======
         print(f"LLM 调用失败: {e}")
->>>>>>> hupisha-branch
         return {
             "urgency_level": "",
             "routing": "frontline_worker",
@@ -126,9 +91,5 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
                 "batch_code": "",
                 "sn_code": "",
             },
-<<<<<<< HEAD
-        }
-=======
         }
 
->>>>>>> hupisha-branch
