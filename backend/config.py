@@ -3,9 +3,8 @@ from dotenv import load_dotenv
 
 #加载 .env 文件
 load_dotenv()
-#
-#LLM 配置
 
+#LLM 配置
 
 # DeepSeek 配置
 DEEPSEEK_API_KEY = "sk-212b8b835bb94e6c8b8d975ca389748a"
@@ -14,8 +13,6 @@ DEEPSEEK_MODEL_NAME = "deepseek-chat"  # 或 "deepseek-coder"
 
 # 如果使用其他 OpenAI 兼容的 API，可以修改为对应的地址
 # DEEPSEEK_BASE_URL = "https://api.deepseek.com/v1"
-
-
 
 #数据库配置
 DATABASE_PATH: str = os.getenv("DATABASE_PATH", "./data/tickets.db")
