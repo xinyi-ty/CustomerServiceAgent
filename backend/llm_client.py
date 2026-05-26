@@ -1,7 +1,8 @@
 import json
 import os
 from typing import Dict
-from openai import OpenAI
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage
 from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL_NAME
 
 # 加载 prompt.txt 作为系统提示词
@@ -9,7 +10,7 @@ _PROMPT_PATH = os.path.join(os.path.dirname(__file__), "prompt.txt")
 with open(_PROMPT_PATH, "r", encoding="utf-8") as f:
     SYSTEM_PROMPT = f.read()
 
-_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+model = init_chat_model(DEEPSEEK_MODEL_NAME)
 
 
 def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
@@ -40,15 +41,13 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
         user_message += f"\n\n【图片/视频 OCR 识别结果】\n{ocr_text}"
 
     try:
-        response = _client.chat.completions.create(
-            model=DEEPSEEK_MODEL_NAME,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_message},
-            ],
-            temperature=0.3,
-        )
-        raw = response.choices[0].message.content.strip()
+        response = model.invoke({
+            "messages":[
+                SystemMessage(SYSTEM_PROMPT),
+                HumanMessage(user_message),
+            ]
+        })
+        raw = response.content.strip()
 
         ticket = json.loads(raw)
 
