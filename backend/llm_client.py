@@ -2,14 +2,14 @@ import json
 import os
 from typing import Dict
 from openai import OpenAI
-from config import LLM_API_KEY, LLM_BASE_URL, LLM_MODEL_NAME
+from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL_NAME
 
 # 加载 prompt.txt 作为系统提示词
 _PROMPT_PATH = os.path.join(os.path.dirname(__file__), "prompt.txt")
 with open(_PROMPT_PATH, "r", encoding="utf-8") as f:
     SYSTEM_PROMPT = f.read()
 
-_client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
+_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
 
 
 def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
@@ -41,9 +41,7 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
 
     try:
         response = _client.chat.completions.create(
-            model=LLM_MODEL_NAME,
-            # TODO: 支持多轮对话（在 messages 中追加历史 assistant/user 消息）
-            # TODO: prompt 复用——将 SYSTEM_PROMPT 缓存，避免每次调用都重新读取
+            model=DEEPSEEK_MODEL_NAME,
             messages=[
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": user_message},
@@ -51,12 +49,6 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
             temperature=0.3,
         )
         raw = response.choices[0].message.content.strip()
-
-        # 去除可能的 markdown 代码块标记
-        if raw.startswith("```"):
-            raw = raw.split("\n", 1)[-1]
-            if raw.endswith("```"):
-                raw = raw[:-3]
 
         ticket = json.loads(raw)
 
@@ -69,7 +61,7 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
             "routing": ticket.get("routing_decision", ""),
             "reply": ticket.get("auto_reply_sent", ""),
             "issue_category": assessment.get("issue_category", ""),
-            "business_impact": assessment.get("business_impact", "Normal"),
+            "business_impact": assessment.get("business_impact", ""),
             "extracted_data": {
                 "order_id": str(extracted.get("order_id") or ""),
                 "model_number": str(extracted.get("model_number") or ""),
@@ -81,10 +73,10 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
         print(f"LLM 调用失败: {e}")
         return {
             "urgency_level": "",
-            "routing": "frontline_worker",
+            "routing": "",
             "reply": "感谢您的反馈，我们已收到您的信息，客服将尽快与您联系。",
             "issue_category": "",
-            "business_impact": "Normal",
+            "business_impact": "",
             "extracted_data": {
                 "order_id": "",
                 "model_number": "",
