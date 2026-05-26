@@ -1,4 +1,5 @@
 # backend/main.py
+
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -6,7 +7,7 @@ import uuid
 from datetime import datetime
 from typing import Dict, Any
 
-# 导入各个模块（其他同学会实现）
+# 导入各个模块
 from database import init_db, save_ticket, get_all_tickets
 from config import PORT, HOST
 

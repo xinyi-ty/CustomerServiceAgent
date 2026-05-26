@@ -6,7 +6,6 @@ pydantic==2.9.0
 python-dotenv==1.0.0
 requests==2.32.0
 paddleocr
-cv2
 
 #RAG依赖
 chromadb
