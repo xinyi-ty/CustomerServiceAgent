@@ -1,12 +1,12 @@
-#2026-05-17
-#多模态依赖
-#fastapi==0.115.0
-#uvicorn[standard]==0.30.0
-#python-multipart==0.0.12
-#pydantic==2.9.0
-#python-dotenv==1.0.0
-#requests==2.32.0
-
+# 多模态依赖
+fastapi==0.115.0
+uvicorn[standard]==0.30.0
+python-multipart==0.0.12
+pydantic==2.9.0
+python-dotenv==1.0.0
+requests==2.32.0
+paddleocr
+cv2
 
 #RAG依赖
 chromadb

@@ -1,7 +1,8 @@
 import json
 import os
-from typing import Dict, Any
-from openai import OpenAI
+from typing import Dict
+from langchain.chat_models import init_chat_model
+from langchain_core.messages import SystemMessage, HumanMessage
 from config import DEEPSEEK_API_KEY, DEEPSEEK_BASE_URL, DEEPSEEK_MODEL_NAME
 
 # 加载 prompt.txt 作为系统提示词
@@ -9,10 +10,10 @@ _PROMPT_PATH = os.path.join(os.path.dirname(__file__), "prompt.txt")
 with open(_PROMPT_PATH, "r", encoding="utf-8") as f:
     SYSTEM_PROMPT = f.read()
 
-_client = OpenAI(api_key=DEEPSEEK_API_KEY, base_url=DEEPSEEK_BASE_URL)
+model = init_chat_model(DEEPSEEK_MODEL_NAME)
 
 
-def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
+def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, any]:
     """
     参数：
         user_text: 用户输入的文本
@@ -34,31 +35,19 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
         }
     异常处理：若调用失败或解析失败，返回默认低优先级结果。
     """
-    # 构造用户消息
+    # 构造用户消息cl
     user_message = f"【客户投诉内容】\n{user_text}"
     if ocr_text:
         user_message += f"\n\n【图片/视频 OCR 识别结果】\n{ocr_text}"
 
     try:
-        response = _client.chat.completions.create(
-            model=DEEPSEEK_MODEL_NAME,
-            # DeepSeek 推荐参数配置
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_message},
-            ],
-            temperature=0.3,
-            max_tokens=2000,  # DeepSeek 建议设置 max_tokens
-            stream=False,  # 非流式输出
-        )
-        content = response.choices[0].message.content
-        raw = content.strip() if content is not None else ""
-
-        # 去除可能的 markdown 代码块标记
-        if raw.startswith("```"):
-            raw = raw.split("\n", 1)[-1]
-            if raw.endswith("```"):
-                raw = raw[:-3]
+        response = model.invoke({
+            "messages":[
+                SystemMessage(SYSTEM_PROMPT),
+                HumanMessage(user_message),
+            ]
+        })
+        raw = response.content.strip()
 
         ticket = json.loads(raw)
 
@@ -71,7 +60,7 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
             "routing": ticket.get("routing_decision", ""),
             "reply": ticket.get("auto_reply_sent", ""),
             "issue_category": assessment.get("issue_category", ""),
-            "business_impact": assessment.get("business_impact", "Normal"),
+            "business_impact": assessment.get("business_impact", ""),
             "extracted_data": {
                 "order_id": str(extracted.get("order_id") or ""),
                 "model_number": str(extracted.get("model_number") or ""),
@@ -80,13 +69,13 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
             },
         }
     except Exception as e:
-        print(f"DeepSeek API 调用失败: {e}")
+        print(f"LLM 调用失败: {e}")
         return {
             "urgency_level": "",
-            "routing": "frontline_worker",
+            "routing": "",
             "reply": "感谢您的反馈，我们已收到您的信息，客服将尽快与您联系。",
             "issue_category": "",
-            "business_impact": "Normal",
+            "business_impact": "",
             "extracted_data": {
                 "order_id": "",
                 "model_number": "",
@@ -94,3 +83,4 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
                 "sn_code": "",
             },
         }
+
