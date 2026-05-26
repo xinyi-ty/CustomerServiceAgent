@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理者看板 - 华工之光客诉系统</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .refresh-btn {
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 30px;
+            padding: 8px 20px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .history-list {
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        .history-card {
+            background: #f8fafc;
+            border-radius: 16px;
+            padding: 12px 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid #2563eb;
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-header">
+    <div class="logo" style="width: 48px; height: 48px; background: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">📊</div>
+    <h2>管理者看板 - 历史工单记录</h2>
+    <div>
+        <button id="refreshBtn" class="refresh-btn">🔄 刷新</button>
+        <button id="backToWelcome" style="background: #e2e8f0; border: none; border-radius: 30px; padding: 8px 20px; margin-left: 10px; cursor: pointer;">🏠 返回首页</button>
+    </div>
+</div>
+
+<div class="card">
+    <div id="historyContainer" class="history-list">
+        <div class="history-icon">📋</div>
+        <h3>加载中...</h3>
+    </div>
+</div>
+
+<script src="admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<!-- 声明文档类型为 HTML5，告诉浏览器按标准模式解析页面 -->
+<html lang="zh-CN">
+<!-- 根元素，lang 属性指定页面主要语言为中文（简体） -->
+<head>
+    <!-- head 区域存放页面的元数据（不直接显示在页面中） -->
+    <meta charset="UTF-8">
+    <!-- 设置字符编码为 UTF-8，支持中文和 emoji -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <!-- 视口设置：宽度等于设备宽度，初始缩放比例为1，允许用户缩放。这是移动端适配的关键 -->
+    <title>华工之光客诉系统</title>
+    <!-- 浏览器标签页上显示的标题 -->
+    <style>
+        /* ========== CSS 样式区域 ========== */
+        /* 基础重置与全局设置 */
+        * {
+            /* 通配选择器 * 表示所有元素 */
+            margin: 0;
+            /* 清除默认外边距 */
+            padding: 0;
+            /* 清除默认内边距 */
+            box-sizing: border-box;
+            /* 盒模型：元素的宽高包含边框和内边距，更方便控制尺寸 */
+        }
+
+        body {
+            /* body 是页面主体内容区域 */
+            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+            /* 字体栈：优先使用 Inter，然后是系统默认等宽字体，最后是 sans-serif 无衬线字体 */
+            background-color: #f8fafc;
+            /* 备用背景颜色（灰白色） */
+            color: #0f172a;
+            /* 默认文字颜色（深灰蓝） */
+            min-height: 100vh;
+            /* 最小高度占满整个视口高度（viewport height） */
+            display: flex;
+            /* 使用弹性布局 */
+            flex-direction: column;
+            /* 主轴方向垂直排列 */
+        }
+
+        /* 动态渐变背景 - 科技感与温度的平衡 */
+        .gradient-bg {
+            /* 类选择器，对应 HTML 中的 class="gradient-bg" */
+            position: fixed;
+            /* 固定定位，相对于浏览器窗口定位，不随滚动条滚动 */
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+            /* z-index 控制层叠顺序，负数表示放在最底层（内容之上） */
+            background: radial-gradient(circle at 10% 20%, rgba(120, 119, 198, 0.1), rgba(255, 255, 255, 0) 70%),
+                        radial-gradient(circle at 90% 30%, rgba(168, 85, 247, 0.08), rgba(255, 255, 255, 0) 70%),
+                        #f8fafc;
+            /* 径向渐变：从圆心向外扩散的颜色变化。这里叠加了两个半透明渐变和一个纯色背景，制造柔和光晕效果 */
+        }
+
+        /* 轻微的动态光晕效果，增加质感 */
+        .gradient-bg::before {
+            /* ::before 是伪元素，在 .gradient-bg 内部最前面插入一个虚拟元素 */
+            content: '';
+            /* 必须有 content 属性，哪怕为空 */
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(125deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+            /* 线性渐变：从左到右，中间亮白，两边透明 */
+            animation: shimmer 15s infinite linear;
+            /* 动画名称 时长 无限次 线性匀速 */
+            pointer-events: none;
+            /* 让这个伪元素不响应鼠标事件，以免遮挡按钮点击 */
+        }
+
+        /* 定义名为 shimmer 的动画关键帧 */
+        @keyframes shimmer {
+            0% { transform: translateX(-100%);}
+            /* 动画开始时，向左偏移100%（完全在左侧不可见） */
+            100% { transform: translateX(200%);}
+            /* 动画结束时，向右偏移200%（从右滑出） */
+        }
+
+        /* 内容容器 */
+        .welcome-container {
+            position: relative;
+            /* 相对定位，为内部绝对定位元素提供参考点，但不影响自身布局 */
+            z-index: 1;
+            /* 层级高于背景，让内容显示在背景上方 */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            /* 水平方向居中对齐（弹性项目交叉轴居中） */
+            justify-content: center;
+            /* 垂直方向居中对齐（弹性项目主轴居中） */
+            text-align: center;
+            /* 文本居中 */
+            min-height: 100vh;
+            /* 占满视口高度 */
+            padding: 2rem;
+            /* 内边距，防止内容贴边 */
+            backdrop-filter: blur(0px);
+            /* 背景模糊效果，这里设为0无模糊，可调节 */
+            transition: backdrop-filter 0.5s ease;
+            /* 过渡效果，方便后续添加悬停模糊变化 */
+        }
+
+        /* 品牌徽章 - 增加特色与信任感 */
+        .brand-badge {
+            background: rgba(255, 255, 255, 0.6);
+            /* 半透明白色背景 */
+            backdrop-filter: blur(8px);
+            /* 背景模糊（毛玻璃效果） */
+            padding: 0.3rem 1rem;
+            /* 内边距：上下0.3rem，左右1rem。rem 是相对根元素字体大小的单位，默认1rem=16px */
+            border-radius: 40px;
+            /* 圆角，值很大时变成胶囊状 */
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #4b5563;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(0,0,0,0.05);
+            /* 浅色边框 */
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            /* 轻微阴影，增加立体感 */
+            display: inline-block;
+            /* 行内块元素，宽度根据内容撑开，且可以设置内外边距 */
+        }
+
+        /* 主标题 - 简约且大气 */
+        .welcome-title {
+            font-size: clamp(2.5rem, 8vw, 4.5rem);
+            /* clamp() 函数：最小2.5rem，理想8vw（视口宽度的8%），最大4.5rem。实现响应式字体大小 */
+            font-weight: 700;
+            /* 粗体 */
+            background: linear-gradient(135deg, #1e3c72, #2a5298, #4f46e5);
+            /* 渐变背景（三种颜色） */
+            background-size: 300% 300%;
+            /* 背景尺寸放大，让动画有移动空间 */
+            -webkit-background-clip: text;
+            background-clip: text;
+            /* 背景裁剪为文字区域（实现渐变文字） */
+            color: transparent;
+            /* 文字颜色透明，露出背景渐变 */
+            margin-bottom: 1rem;
+            animation: gradientShift 8s ease infinite;
+            /* 应用渐变移动动画 */
+            letter-spacing: -0.02em;
+            /* 字间距稍微紧凑一点 */
+        }
+
+        /* 渐变文字移动动画 */
+        @keyframes gradientShift {
+            0% { background-position: 0 50%;}
+            50% { background-position: 100% 50%;}
+            100% { background-position: 0 50%;}
+        }
+
+        /* 副标题 */
+        .welcome-sub {
+            font-size: 1.2rem;
+            color: #5b6e8c;
+            margin-bottom: 3rem;
+            max-width: 600px;
+            opacity: 0.9;
+        }
+
+        /* 按钮组 */
+        .button-group {
+            display: flex;
+            gap: 1.5rem;
+            /* flex 子项之间的间距 */
+            flex-wrap: wrap;
+            /* 空间不足时换行 */
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+
+        .role-btn {
+            border-radius: 60px;
+            padding: 0.8rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            /* 鼠标指针变为手型 */
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+            /* 过渡动画：所有属性变化时，使用自定义贝塞尔曲线 */
+            width: 180px;
+            background: white;
+            color: #1f2937;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            border: 1px solid #e2e8f0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        /* 针对“我是用户”按钮单独样式（覆盖默认样式） */
+        .role-btn.user {
+            background: white;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* 针对“我是管理者”按钮的样式 */
+        .role-btn.admin {
+            background: white;
+            border: 1px solid #cbd5e1;
+        }
+
+        /* 按钮悬停效果 */
+        .role-btn:hover {
+            transform: translateY(-4px);
+            /* 向上平移4像素 */
+            filter: brightness(1.02);
+            /* 亮度稍微增加 */
+            box-shadow: 0 15px 25px -10px rgba(0,0,0,0.15);
+        }
+
+        /* 页脚 */
+        footer {
+            position: absolute;
+            bottom: 25px;
+            /* 距离父容器底部25像素 */
+            color: #94a3b8;
+            font-size: 0.8rem;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+            /* 页脚不拦截鼠标事件，避免干扰按钮点击 */
+        }
+
+        /* 响应式：当屏幕宽度小于等于640像素时，调整按钮布局 */
+        @media (max-width: 640px) {
+            .button-group {
+                gap: 1rem;
+                flex-direction: column;
+                /* 改为垂直排列 */
+                align-items: center;
+            }
+            .role-btn {
+                width: 200px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- 背景层（全屏固定渐变背景） -->
+<div class="gradient-bg"></div>
+
+<!-- 主要内容容器 -->
+<div class="welcome-container">
+    <!-- 品牌徽章：一个精致的小标签 -->
+    <div class="brand-badge">
+        ✨ 智能客诉处理系统 ✨
+    </div>
+    <!-- 主标题 -->
+    <div class="welcome-title">
+        华工之光客诉系统
+    </div>
+    <!-- 副标题描述 -->
+    <div class="welcome-sub">
+        AI Complaint Assistant — 快速响应 · 全程可追溯
+    </div>
+    <!-- 按钮组，包含两个入口 -->
+    <div class="button-group">
+        <!-- 用户入口按钮，点击后跳转到 user.html 页面 -->
+        <button class="role-btn user" id="userBtn">
+            我是用户
+        </button>
+        <!-- 管理者入口按钮，点击后跳转到 admin.html 页面 -->
+        <button class="role-btn admin" id="adminBtn">
+            我是管理者
+        </button>
+    </div>
+    <!-- 页脚信息 -->
+    <footer>
+        智能客诉处理 · 快速响应 · 全程可追溯
+    </footer>
+</div>
+
+<!-- JavaScript 代码区域：处理按钮点击跳转 -->
+<script>
+    // document.getElementById('userBtn') 获取页面中 id 为 userBtn 的元素
+    // addEventListener 为该元素添加“点击”事件监听器，第二个参数是点击后执行的箭头函数
+    document.getElementById('userBtn').addEventListener('click', () => {
+        // window.location.href 是当前浏览器窗口的网址，将其修改为 'user.html' 就会跳转
+        window.location.href = 'user.html';
+    });
+    document.getElementById('adminBtn').addEventListener('click', () => {
+        window.location.href = 'admin.html';
+    });
+</script>
+</body>
+</html>

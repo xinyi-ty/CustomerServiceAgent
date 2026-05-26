@@ -28,9 +28,6 @@ import dashscope
 from dashscope import TextEmbedding
 from openai import OpenAI
 
-from sentence_transformers import SentenceTransformer
-
-
 # ========================= 1. 加载环境变量 =========================
 # 尝试多个可能的 .env 文件位置，确保无论从哪个目录运行都能找到
 possible_env_paths = [
