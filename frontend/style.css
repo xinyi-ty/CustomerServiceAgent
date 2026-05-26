@@ -1,251 +1,272 @@
-/*=====header=====*/
-
-/*整个顶部导航栏*/
-.header{
-    display: flex;/*让左右区域水平排列*/
-    justify-content: space-between;/*左右拉开距离*/
-    align-items: center;/*垂直居中*/
-    margin-bottom: 32px;/*底部留白*/
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
-/*左侧容器logo + 标题*/
-.header-left{
+body {
+    background: #f0f2f5;
+    font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* 头部 */
+.header {
     display: flex;
     align-items: center;
-
-    gap:18px;/*子元素间距*/
-}
-
-/*logo*/
-.logo{
-    width:80px;
-    height:70px;
-    border-radius: 50%;/*变圆形*/
-    background:#2563eb ;
-    color: white;
-    font-size: 28px;/*控制文字有多大*/
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/*标题*/
-.header-group h1{
-    font-size: 32px;
-    font-weight: 700;
-    color: #111827;
-}
-
-/*副标题*/
-.hesder-group p{
-    margin-top: 4px;/*元素和别人之间的距离*/
-
-    color: #6b7280;
-    font-size: 18px;
-}
-
-/* ================= 卡片通用样式 ================= */
-.card{
+    gap: 16px;
     background: white;
-    border-radius:18px;/*将元素的四个角设置为半径为 18 像素的圆角*/
-    padding: 2px;
+    padding: 12px 24px;
+    border-radius: 28px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.06);/**给元素添加一层轻微的、向下的半透明阴影效果**/
-/****这种参数组合产生的是极轻微的悬浮感，类似卡片轻微浮在页面上**/
+    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
 }
-
-/* 板块标题 */
-.section-title{
-    font-size: 32px;
-    margin-bottom: 18px;
-    color: #172554;
-}
-
-/* ================= 双栏布局 ================= */
-.input-layout{
+.logo {
+    background: #2563eb;
+    width: 48px;
+    height: 48px;
+    border-radius: 28px;
     display: flex;
-    gap: 40px;/*** 表示子元素之间的间距为 40 像素***/
-    align-items: flex-start;/*子元素顶部对齐*/
-
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    color: white;
 }
-
-/* 左右区域平均分 */
-.left-panel,
-.right-panel{
-    flex: 1;/**左右区域平均分配剩余空间**/
-}
-
-/*label*/
-label{
-    display: block;/*标签独占一行*/
+.header h1 {
     font-size: 22px;
-    font-weight: 600;/*加粗*/
+    font-weight: 600;
+    color: #0f172a;
+}
+.header p {
+    font-size: 13px;
+    color: #475569;
+    margin-top: 2px;
+}
+
+/* 卡片通用 */
+.card {
+    background: white;
+    border-radius: 24px;
+    padding: 18px 24px;
     margin-bottom: 18px;
-
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
 }
-
-/* 红色星号 */
-label span{
-    color: red;
-}
-
-/* textarea */
-textarea{
-    width: 100%;/*占满父元素宽度*/
-    height: 60px;/*固定高度*/
-    border: 1px solid #d1d5db;/*边框颜色*/
-    border-radius: 14px;/*将元素的四个角设置为半径为 14 像素的圆角*/
-    padding: 18px;
+.card h2 {
     font-size: 18px;
-    resize: none;/*禁止用户调整大小*/
-
+    font-weight: 600;
+    margin-bottom: 14px;
+    color: #1e293b;
+    border-left: 4px solid #2563eb;
+    padding-left: 12px;
 }
 
-/* 字数统计 */
-.counter{
-    text-align: right;/*文本右对齐*/
+/* 双栏布局 */
+.two-columns {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+}
+.left {
+    flex: 2;
+    min-width: 220px;
+}
+.right {
+    flex: 1;
+    min-width: 200px;
+}
+
+label {
     font-size: 14px;
-    color: #6b7280;
-    position:absolute;
-    right:14px;
-    bottom:12px;
+    font-weight: 500;
+    margin-bottom: 6px;
+    display: block;
+    color: #1f2937;
+}
+label span {
+    color: #e53e3e;
 }
 
-
-/* 提交按钮 */
-#submitBtn{
-    margin-top: 0px;
+textarea {
+    width: 100%;
+    border: 1px solid #cbd5e1;
+    border-radius: 14px;
+    padding: 10px 12px;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    height: 100px;
+    line-height: 1.4;
+}
+textarea:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+}
+.counter {
+    text-align: right;
+    font-size: 12px;
+    color: #6b7280;
+    margin-top: 4px;
+}
+#submitBtn {
     background: #2563eb;
     color: white;
-    border:none ;/*去掉默认边框*/
-    border-radius: 12px;
-    padding: 14px 30px;
-    font-size: 18px;
-    cursor: pointer;/*鼠标暂停时候指为手形*/
-    align-items: center;
+    border: none;
+    border-radius: 32px;
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-top: 14px;
+    cursor: pointer;
+    width: 100%;
+    transition: background 0.2s;
+}
+#submitBtn:hover {
+    background: #1d4ed8;
+}
+#submitBtn:disabled {
+    background: #94a3b8;
 }
 
-/* 上传图标 */
-.upload-icon{
-    font-size: 42px;
-    color: #6b7280;
+.upload-box {
+    border: 1px dashed #9ca3af;
+    border-radius: 18px;
+    background: #fafcff;
+    padding: 16px 12px;
+    text-align: center;
 }
-
-/* 上传按钮 */
-.upload-btn{
-    margin-top: 20px;
+.upload-icon {
+    font-size: 32px;
+    margin-bottom: 6px;
+}
+.upload-box h3 {
+    font-size: 14px;
+    font-weight: 500;
+    margin: 6px 0;
+}
+.upload-box p {
+    font-size: 12px;
+    color: #556c8a;
+    margin: 6px 0;
+}
+.upload-btn {
     background: white;
     border: 1px solid #2563eb;
-    color: #2563eb;
-    padding: 12px 24px;
-    border-radius: 12px;
+    border-radius: 30px;
+    padding: 5px 16px;
+    font-size: 12px;
+    cursor: pointer;
+    margin: 8px 0 4px;
+}
+.upload-btn:hover {
+    background: #eff6ff;
+}
+#fileInfo {
+    font-size: 11px;
+    color: #4b5563;
+    margin-top: 6px;
+    word-break: break-all;
 }
 
-/* 上传区域 */
-
-.upload-box{
-
-    min-height: 220px;
-
-    border:2px dashed #d1d5db;
-
-    border-radius:16px;
-
-    display:flex;
-
-    flex-direction:column;
-
-    justify-content:center;
-
-    align-items:center;
-
+/* 识别结果样式（仿图二卡片） */
+.result-placeholder {
+    text-align: center;
+    padding: 10px 0 6px;
 }
-
-/* textarea容器 */
-
-.textarea-wrapper{
-
-    position:relative;
-
+.robot-icon {
+    font-size: 48px;
+    margin-bottom: 8px;
 }
-
-/* ================= 识别结果模块 ================= */
-.result-box{
-    text-align: center;/*文本居中*/
-    padding:50px 20px;
+.result-placeholder h3 {
+    font-size: 18px;
+    margin: 4px 0;
+    color: #1e293b;
 }
-
-/* AI图标 */
-.robot-icon{
-    font-size: 72px;
-    color:#93c5fd;
-    margin-bottom: 20px;
-}
-
-/* 标题 */
-.result-box h3{
-    font-size: 34px;
-    color: #172554;
+.result-placeholder p {
+    font-size: 13px;
+    color: #6c7a91;
     margin-bottom: 16px;
 }
-/* 提示文字 */
-.result-box p{
-    font-size: 18px;
-    color: #6b7280;
-    margin-bottom: 35px;
-}
-
-/* 标签整体布局 */
-.feature-row{
+.feature-cards {
     display: flex;
-    justify-self: center;/*标签水平居中*/
-
-    gap:22px;/*标签之间距离*/
-    flex-wrap:wrap;/*标签过多时换行显示*/
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 12px;
+}
+.feature-card {
+    background: #f8fafc;
+    border-radius: 40px;
+    padding: 6px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #0f172a;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    border: 1px solid #e2e8f0;
+}
+/* 动态生成的实际卡片样式（与占位一致） */
+.result-card {
+    background: #f1f5f9;
+    border-radius: 40px;
+    padding: 6px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
 }
 
-/* 单个标签卡片 */
-.feature-card{
-    display: flex;/*图标与文字水平排列*/
-    align-items: center;/*图文水平居中*/
-    gap :10px;
-    background:#ffffff;
-    border: 1px solid #e5e7eb;
-    border-radius: 14px;
-    padding: 18px 28px;
-    min-width: 165px;
-    font-size: 22px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);;
-
-}
-
-/* 标签文字 */
-.feature-card span{
-    font-size: 18px;
-    color:#172554;
-    font-weight: 600;
-}
-
-/* ================= 历史工单记录模块 ================= */
-.history-box{
+/* 历史工单 */
+.history-placeholder {
     text-align: center;
-    padding: 55px 20px;
+    padding: 16px 0;
 }
-/* 图标 */
-.history-icon{
-    font-size: 70px;
-    color:#cbd5e1;
-    margin-bottom: 18px;
+.history-icon {
+    font-size: 42px;
+    color: #94a3b8;
+    margin-bottom: 8px;
+}
+.history-placeholder h3 {
+    font-size: 16px;
+    color: #334155;
+    margin-bottom: 6px;
+}
+.history-placeholder p {
+    font-size: 13px;
+    color: #6c7a91;
+}
+.history-card {
+    background: #f8fafc;
+    border-radius: 16px;
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    text-align: left;
+    border-left: 4px solid #2563eb;
+}
+.history-card h4 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+}
+.history-card p {
+    font-size: 12px;
+    color: #475569;
 }
 
-/* 主标题 */
-.history-box h3{
-    font-size: 34px;
-    color: #475569;
-    margin-bottom: 12px;
-}
-/* 提示文字 */
-.history-box p{
-    font-size: 18px;
-    color: #94a3b8;
+/* 响应式 */
+@media (max-width: 720px) {
+    body {
+        padding: 12px;
+    }
+    .card {
+        padding: 16px;
+    }
+    .two-columns {
+        flex-direction: column;
+        gap: 16px;
+    }
+    textarea {
+        height: 90px;
+    }
 }

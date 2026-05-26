@@ -1,201 +1,74 @@
 <!DOCTYPE html>
-<link rel="stylesheet" href="./style.css">
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能售后工单系统</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
 
-    
 <header class="header">
-    <div class="header-left">
-            <div class="logo">
-                🤖
-        </div>
-
-        <div class="header-group">
-            <h1>
-                智能售后工单系统
-            </h1>
-            <p>
-                AI Comlaint Assistant
-            </p>
-        </div>
-
+    <div class="logo">🤖</div>
+    <div>
+        <h1>智能售后工单系统</h1>
+        <p>AI Complaint Assistant</p>
     </div>
 </header>
 
-<!-- ================= 问题输入模块开始 ================= -->
-<section class="card">
-    <h2 class="section-title">
-        1.问题输入
-    </h2>
-
-    <!-- 左右双栏布局-->
-    <div class="input-layout">
-        <div class="left-panel">
-            <label><!-- 给输入框、上传框、textarea 写“说明文字”-->
-                问题描述
-                <span>*</span> <!-- 包住一小段文字-->
-            </label>
-
-            <!-- 用户输入框-->
-            <div class="textarea-wrapper">
-
-                <textarea
-                id="userText"
-                placeholder="请详细描述您遇到的问题..."
-                ></textarea>
-
-                <div class="counter">
-
-                    0/1000
-
+<main>
+    <!-- 1. 问题输入模块 -->
+    <section class="card">
+        <h2>1. 问题输入</h2>
+        <div class="two-columns">
+            <div class="left">
+                <label>问题描述 <span>*</span></label>
+                <label for="userText"></label><textarea id="userText" placeholder="请详细描述您遇到的问题..." maxlength="1000"></textarea>
+                <div class="counter">0/1000</div>
+                <button id="submitBtn">📤 发送问题</button>
+            </div>
+            <div class="right">
+                <label>上传图片/视频（可选）</label>
+                <div class="upload-box">
+                    <div class="upload-icon">☁️</div>
+                    <h3>点击或拖拽文件到此处</h3>
+                    <p>支持图片、视频格式，大小不超过50MB</p>
+                    <input type="file" id="uploadInput" hidden accept="image/*,video/mp4,video/quicktime">
+                    <button type="button" id="uploadBtn" class="upload-btn">选择文件</button>
+                    <p id="fileInfo">未选择文件</p>
                 </div>
-
-            </div>
-
-            <!-- 提交按钮 -->
-            <button id="submitBtn">
-                ✈ 提交工单
-            </button>
-
-        </div>
-
-        <!-- 上传模块 -->
-        <div class="right-panel">
-
-            <label>
-                上传图片 / 视频
-            </label>
-            <div class="upload-box">
-                <div class="upload-icon">
-                    ☁
-                </div>
-                <h3>
-                    点击或拖拽文件到此处
-                </h3>
-                <p>
-                    支持图片、视频格式,大小不超过50MB
-                </p>
-
-                <!-- 文件上传输入框(隐藏) -->
-                <input
-                    type="file"
-                    id="uploadInput"
-                    hidden
-                >
-
-                <!-- 选择文件按钮 -->
-
-                <button
-                    class="upload-btn"
-                    id="uploadBtn"
-                >
-
-                    选择文件
-
-                </button>
-
-                <!-- 上传结果显示 -->
-
-                <p id="fileInfo">
-
-                未选择文件
-
-                </p>
             </div>
         </div>
-    </div>
+    </section>
 
-</section>
-<!-- ================= 问题输入模块结束 ================= -->
-
-
-<!-- ================= 识别结果模块 ================= -->
-<section  class="card">
-
-    <h2 class="section-title">
-        2.识别结果
-    </h2>
-
-    <!-- 内容区域-->
-    <div 
-    class="result-box"
-    id="resultContent"
-    >
-        <div class="robot-icon">
-            🤖
-        </div>
-
-        <h3>
-            尚未生成分析结果
-        </h3>
-
-        <p>
-            提交问题后，系统将在这里展示以下内容：
-        </p>
-
-        <!-- 功能标签 -->
-        <div class="feature-row">
-            <div class="feature-card">
-                🏷
-                <span>问题分类</span>
-            </div>
-            <div class="feature-card">
-
-                ⚠
-
-                <span>紧急程度</span>
-
-            </div>
-            <div class="feature-card">
-
-                💬
-
-                <span>AI 回复</span>
-
-            </div>
-            <div class="feature-card">
-
-                💡
-
-                <span>SOP 指导建议</span>
-
-            </div>
-            <div class="feature-card">
-
-                🛡
-
-                <span>工单ID</span>
-
+    <!-- 2. 识别结果模块 -->
+    <section class="card">
+        <h2>2. 识别结果</h2>
+        <div id="resultContent" class="result-placeholder">
+            <div class="robot-icon">🤖</div>
+            <h3>尚未生成分析结果</h3>
+            <p>提交问题后，系统将在这里展示以下内容：</p>
+            <div class="feature-cards">
+                <div class="feature-card">🏷 问题类别</div>
+                <div class="feature-card">⚠️ 紧急程度</div>
+                <div class="feature-card">💬 AI回复</div>
+                <div class="feature-card">📋 SOP指导建议</div>
+                <div class="feature-card">🛡 保修状态</div>
             </div>
         </div>
+    </section>
 
-    </div>
-
-</section>
-
-<!-- ================= 历史工单记录 ================= -->
-<section class="card">
-
-    <h2 class="section-title">
-        3.历史工单记录
-    </h2>
-    <div 
-    class="history-box"
-    id="historyContainer">
-        <div class="history-icon">
-            📋
+    <!-- 3. 历史工单记录 -->
+    <section class="card">
+        <h2>3. 历史工单记录</h2>
+        <div id="historyContainer" class="history-placeholder">
+            <div class="history-icon">📋</div>
+            <h3>暂无历史工单记录</h3>
+            <p>您提交的工单记录将显示在这里</p>
         </div>
-        <h3>
-        暂无历史工单记录
-        </h3>
-        <p>
-        您提交的工单记录将显示在这里
-        </p>
-    </div>
-
-</section>
-
-<!-- 连接JS文件 -->
+    </section>
+</main>
 
 <script src="app.js"></script>
-
 </body>
 </html>

@@ -1,270 +1,156 @@
-/* ================= 字数统计功能 ================= */
-
-/*获取输入框*/
-const userText=document.getElementById("userText");
-
-/**找到：id="userText"这个输入框。以后JS才能操作它 **/
-
-/*获取字数统计区域*/
-const counter=document.querySelector(".counter");
-
-/*监听输入事件*/
-/**input作用：监听用户在输入**/
-userText.addEventListener("input",function(){
-    let currentLength=userText.value.length;
-    /*获取当前输入内容长度 */
-
-
-    /*更新页面文字*/
-    counter.textContent=currentLength+"/1000";}
-)
-
-/* ================= 上传文件功能 ================= */
-/*获取上传按钮*/ 
-const uploadBtn=document.getElementById("uploadBtn");
-
-/*获取文件输入框*/ 
-const uploadInput=document.getElementById("uploadInput"); 
-
-/*获取显示区域*/ 
-const fileInfo=document.getElementById("fileInfo");
-
-/** 点击按钮触发文件选择*/
-uploadBtn.addEventListener("click",function(){
-    uploadInput.click();
+// 防XSS函数
+function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>]/g, function(m) {
+        if (m === '&') return '&amp;';
+        if (m === '<') return '&lt;';
+        if (m === '>') return '&gt;';
+        return m;
+    });
 }
-);
 
-/*监听文件变化*/ 
-uploadInput.addEventListener("change",function(){
-    /*获取第一个文件*/ 
-    const file=uploadInput.files[0];
+const userText = document.getElementById('userText');
+const counter = document.querySelector('.counter');
+const uploadBtn = document.getElementById('uploadBtn');
+const uploadInput = document.getElementById('uploadInput');
+const fileInfo = document.getElementById('fileInfo');
+const submitBtn = document.getElementById('submitBtn');
+const resultContent = document.getElementById('resultContent');
+const historyContainer = document.getElementById('historyContainer');
 
-    if(!file){
-        return;
+// 后端地址（可根据部署环境修改）
+const API_BASE = 'http://localhost:8000';
+
+// 字数统计
+if (userText && counter) {
+    function updateCounter() {
+        counter.textContent = userText.value.length + '/1000';
     }
-
-    let fileSize=file.size/1024/1024;
-
-    let allowedTypes=[
-        "image/jpeg",
-
-        "image/png",
-
-        "image/jpg",
-
-        "video/mp4",
-
-        "video/quicktime",
-
-        "video/x-msvideo"
-    ];
-    /*格式检查*/ 
-    if(!allowedTypes.includes(file.type)){
-    alert("仅支持图片或视频格式");  
-    return;
+    userText.addEventListener('input', updateCounter);
+    updateCounter();
 }
 
-    /* 大小检查*/
-    if(fileSize>50){
-    alert("文件不能超过50MB");
-    return;
-} 
-
-    /* 显示上传结果*/
-    fileInfo.textContent="已上传"+file.name;
-});
-
-/* ================= 提交按钮功能并且更新界面（前后端联调） ================= */
-
-/*获取提交按钮*/
-const submitBtn=document.getElementById("submitBtn");
-
-/*获取结果显示区域*/
-const resultContent=document.getElementById("resultContent");
-
-
-/*监听提交*/
-submitBtn.addEventListener(
-
-    "click",
-
-    async function(){
-
-        /*获取文本内容*/
-        let content=
-
-        userText.value.trim();
-
-
-
-        /*空输入检查*/
-        if(content===""){
-
-            alert("请输入问题描述");
-
+// 文件上传UI
+if (uploadBtn && uploadInput) {
+    uploadBtn.addEventListener('click', () => uploadInput.click());
+    uploadInput.addEventListener('change', () => {
+        const file = uploadInput.files[0];
+        if (!file) {
+            fileInfo.textContent = '未选择文件';
             return;
-
         }
-
-
-
-        /*获取上传文件*/
-        const file=
-
-        uploadInput.files[0];
-
-
-
-        /*创建FormData*/
-        let formData=
-
-        new FormData();
-
-
-
-        /*字段名必须和FastAPI一致*/
-        formData.append(
-
-            "text",
-
-            content
-
-        );
-
-
-
-        /*有文件再上传*/
-        if(file){
-
-            formData.append(
-
-                "image",
-
-                file
-
-            );
-
+        if (file.size > 50 * 1024 * 1024) {
+            alert('文件不能超过50MB');
+            uploadInput.value = '';
+            fileInfo.textContent = '未选择文件';
+            return;
         }
-
-        try{
-            /*请求后端*/
-            const response=
-            await fetch(
-                "http://localhost:8000/process",
-                {
-                    method:"POST",
-                    body:formData
-                }
-            );
-            /*解析JSON*/
-            const data=
-            await response.json();/*等待并解析 HTTP 响应体，将其从 JSON 格式转换为 JavaScript 对象或数组。*/
-            console.log(data);/*在控制台打印出 data 的内容，方便调试或查看返回的数据结构。*/
-            
-            /*更新界面*/
-            resultContent.innerHTML=`
-                <div class="robot-icon">
-                    🤖
-                </div>
-                <h3>
-                    分析完成
-                </h3>
-                <p>
-                    AI 已生成识别结果
-                </p>
-                <div class="feature-row">
-                    <div class="feature-card">
-                        🏷
-                        <span>
-                            <!-- 问题分类-->
-                            ${data.extracted_data.issue_category}
-                        </span>
-                    </div>
-                    <div class="feature-card">
-                        ⚠
-                        <span>
-                            <!-- 紧急程度 -->
-                            ${data.extracted_data.urgency_level}
-                        </span>
-                    </div>
-                    <div class="feature-card">
-                        💬
-                        <span>
-                            <!-- 建议 -->
-                            ${data.agent_business_assessment}
-                        </span>
-                    </div>
-                    <div class="feature-card">
-                        💡
-                        <span>
-                            <!-- 路由决策 -->
-                            ${data.routing_decision}
-                        </span>
-                    <div>
-                    <div class="feature-card">
-                        🛡
-                        <span>
-                            <!-- 订单id-->
-                            ${data.ticket_id}
-                        </span>
-                    <div>
-                <div>
-                `;
-        }
-
-        catch(error){
-            console.error(error);
-            alert(
-                "连接后端失败"
-            );
-        }
-    }
-);
-
-/* ================= 历史工单 ================= */
-
-/*获取历史工单区域*/
-const historyContainer=document.getElementById("historyContainer");
-
-async function loadHistory(){
-    try{
-        const response=await fetch(
-            "http://localhost:8000/history"
-        );
-        const data=await response.json();
-
-        renderHistory(data);
-    }
-
-    catch(error){
-        console.error(error);
-    }
+        let name = file.name;
+        if (name.length > 30) name = name.slice(0, 27) + '...';
+        fileInfo.textContent = name;
+    });
 }
 
-/*渲染历史记录*/
-function renderHistory(data) {
-    if(data.length===0){
+// 提交工单
+async function submitComplaint() {
+    const content = userText.value.trim();
+    if (!content) {
+        alert('请输入问题描述');
         return;
     }
-    let html="";
-
-    data.forEach(
-        function(ticket){
-            html+=`
-            <div class="history-card">
-                <h4>
-                    工单id:${ticket.ticket_id}
-                </h4>
-                <p>
-                    ${ticket.issue_category}
-                </p>
-                <p>
-                    ${ticket.created_at}
-                </p>
-            </div>
-            `; 
-        }
-    );
-    historyContainer.innerHTML=html;
+    const file = uploadInput.files[0];
+    const formData = new FormData();
+    formData.append('text', content);
+    if (file) formData.append('image', file);
+    submitBtn.disabled = true;
+    const originalText = submitBtn.textContent;
+    submitBtn.textContent = '⏳ 处理中...';
+    try {
+        const res = await fetch(`${API_BASE}/process`, {
+            method: 'POST',
+            body: formData
+        });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        displayResult(data);
+        loadHistory();      // 刷新历史
+        // 清空文件选择
+        uploadInput.value = '';
+        fileInfo.textContent = '未选择文件';
+    } catch (err) {
+        alert('连接后端失败: ' + err.message);
+    } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalText;
+    }
 }
+
+function displayResult(data) {
+    if (!resultContent) return;
+    // 适配后端返回的数据结构
+    const extracted = data.extracted_data || {};
+    const assessment = data.agent_business_assessment || {};
+
+    const category = escapeHtml(extracted.issue_category || assessment.issue_category || '未分类');
+    const urgency = escapeHtml(assessment.urgency_level || '未知');
+    const aiReply = escapeHtml(data.auto_reply_sent || '暂无回复');
+    const sopGuide = escapeHtml(data.routing_decision || '请转人工');
+    const warranty = escapeHtml(assessment.warranty_status || '未校验');
+    const ticketId = escapeHtml(data.ticket_id || '生成中');
+
+    resultContent.innerHTML = `
+        <div class="robot-icon">🤖</div>
+        <h3>分析完成</h3>
+        <p>工单号：${ticketId}</p>
+        <div class="feature-cards">
+            <div class="feature-card">🏷 问题类别：${category}</div>
+            <div class="feature-card">⚠️ 紧急程度：${urgency}</div>
+            <div class="feature-card">💬 AI回复：${aiReply}</div>
+            <div class="feature-card">📋 SOP建议：${sopGuide}</div>
+            <div class="feature-card">🛡 保修状态：${warranty}</div>
+        </div>
+    `;
+}
+
+// 加载历史工单
+async function loadHistory() {
+    try {
+        const res = await fetch(`${API_BASE}/history`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const result = await res.json();
+        // 后端返回 { tickets: [...] }
+        const data = result.tickets || [];
+        if (!Array.isArray(data) || data.length === 0) {
+            historyContainer.innerHTML = `
+                <div class="history-icon">📋</div>
+                <h3>暂无历史工单记录</h3>
+                <p>您提交的工单记录将显示在这里</p>
+            `;
+            return;
+        }
+        let html = '';
+        for (const t of data) {
+            const ticketId = escapeHtml(t.ticket_id || '');
+            const category = escapeHtml(t.extracted_data?.issue_category || t.agent_business_assessment?.issue_category || '无分类');
+            const createdAt = escapeHtml(t.created_at || '');
+            html += `
+                <div class="history-card">
+                    <h4>工单ID: ${ticketId}</h4>
+                    <p>${category} · ${createdAt}</p>
+                </div>
+            `;
+        }
+        historyContainer.innerHTML = html;
+    } catch (e) {
+        console.error(e);
+        historyContainer.innerHTML = `
+            <div class="history-icon">⚠️</div>
+            <h3>加载失败</h3>
+            <p>请检查后端服务是否运行在 ${API_BASE}</p>
+        `;
+    }
+}
+
+// 绑定事件
+submitBtn.addEventListener('click', submitComplaint);
+document.addEventListener('DOMContentLoaded', loadHistory);
