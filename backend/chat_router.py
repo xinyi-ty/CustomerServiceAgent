@@ -90,7 +90,7 @@ async def chat_endpoint(
         response = _chat_client.chat.completions.create(
             model=DEEPSEEK_MODEL_NAME,
             messages=messages,
-            temperature=0.7,      # 对话可稍具创造性
+            temperature=0.3,      # 对话可稍具创造性
             max_tokens=800,
             timeout=30.0,
         )

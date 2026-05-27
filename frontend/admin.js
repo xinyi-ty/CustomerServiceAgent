@@ -8,6 +8,12 @@ function escapeHtml(str) {
     });
 }
 
+// 过滤掉 <think>...</think> 标签及其内容
+function removeThinkingTags(text) {
+    if (!text) return '';
+    return text.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+}
+
 const API_BASE = 'http://localhost:8000';
 const historyContainer = document.getElementById('historyContainer');
 const refreshBtn = document.getElementById('refreshBtn');
@@ -33,13 +39,15 @@ async function loadHistory() {
             const category = escapeHtml(t.extracted_data?.issue_category || t.agent_business_assessment?.issue_category || '无分类');
             const urgency = escapeHtml(t.agent_business_assessment?.urgency_level || '未知');
             const createdAt = escapeHtml(t.created_at || '未知时间');
-            const reply = escapeHtml(t.auto_reply_sent || '');
+            let replyRaw = t.auto_reply_sent || '';
+            const replyClean = removeThinkingTags(replyRaw);
+            const replyPreview = replyClean.length > 100 ? replyClean.substring(0, 100) + '...' : replyClean;
             html += `
                 <div class="history-card">
                     <h4>工单ID: ${ticketId}</h4>
                     <p><strong>问题类别:</strong> ${category} | <strong>紧急度:</strong> ${urgency}</p>
                     <p><strong>创建时间:</strong> ${createdAt}</p>
-                    <p><strong>AI回复摘要:</strong> ${reply.substring(0, 100)}${reply.length > 100 ? '...' : ''}</p>
+                    <p><strong>AI回复摘要:</strong> ${escapeHtml(replyPreview)}</p>
                 </div>
             `;
         }

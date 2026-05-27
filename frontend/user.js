@@ -16,7 +16,7 @@ if (!sessionId) {
 }
 let conversationHistory = [];
 let currentFile = null;
-let isStreaming = false;  // 防止重复打字
+let isStreaming = false;
 
 // ======================== 辅助函数 ========================
 function generateSessionId() {
@@ -33,7 +33,23 @@ function escapeHtml(str) {
     });
 }
 
-// 添加消息到界面（非打字机模式，用于用户消息）
+/**
+ * 解析回复中的思考链
+ * @param {string} rawText - 包含可能 <think>...</think> 的文本
+ * @returns {object} { thinking: string|null, reply: string }
+ */
+function parseThinkingReply(rawText) {
+    const thinkRegex = /<think>([\s\S]*?)<\/think>/;
+    const match = rawText.match(thinkRegex);
+    if (match) {
+        const thinking = match[1].trim();
+        const reply = rawText.replace(thinkRegex, '').trim();
+        return { thinking, reply };
+    }
+    return { thinking: null, reply: rawText };
+}
+
+// 普通添加消息（用户消息或简单提示）
 function addMessage(role, content, extra = {}) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}`;
@@ -48,21 +64,63 @@ function addMessage(role, content, extra = {}) {
     return messageDiv;
 }
 
-// 打字机效果：将内容逐字添加到指定元素中
-async function typeText(element, text, speed = 20) {
-    if (!element) return;
-    const bubble = element.querySelector('.bubble');
-    if (!bubble) return;
-    bubble.innerHTML = ''; // 清空
+// 带思考链的助手消息（折叠思考块 + 最终回复可打字）
+function addAssistantMessageWithThinking(fullRawText, extra = {}) {
+    const { thinking, reply } = parseThinkingReply(fullRawText);
+    const messageDiv = document.createElement('div');
+    messageDiv.className = 'message assistant';
+
+    let bubbleHtml = `<div class="bubble">`;
+    // 如果有思考内容，添加折叠块
+    if (thinking) {
+        bubbleHtml += `
+            <div class="think-container">
+                <div class="think-summary">🤔 思考过程</div>
+                <div class="think-content" style="display: none;">${escapeHtml(thinking)}</div>
+            </div>
+        `;
+    }
+    // 最终回复容器（用于打字机效果）
+    bubbleHtml += `<div class="reply-content"></div>`;
+    if (extra.ticket_id) {
+        bubbleHtml += `<span class="ticket-badge">工单: ${extra.ticket_id}</span>`;
+    }
+    bubbleHtml += `</div>`;
+    messageDiv.innerHTML = bubbleHtml;
+    chatMessages.appendChild(messageDiv);
+
+    // 绑定折叠事件
+    const thinkContainer = messageDiv.querySelector('.think-container');
+    if (thinkContainer) {
+        const summary = thinkContainer.querySelector('.think-summary');
+        const content = thinkContainer.querySelector('.think-content');
+        summary.addEventListener('click', () => {
+            const isHidden = content.style.display === 'none';
+            content.style.display = isHidden ? 'block' : 'none';
+            summary.innerHTML = isHidden ? '🤔 思考过程 ▼' : '🤔 思考过程 ▶';
+        });
+        // 初始状态为折叠
+        summary.innerHTML = '🤔 思考过程 ▶';
+    }
+
+    chatMessages.scrollTop = chatMessages.scrollHeight;
+    return { messageDiv, replyText: reply };
+}
+
+// 打字机效果：将文本逐字输出到指定的 .reply-content 容器
+async function typeTextToReplyContainer(messageDiv, text, speed = 20) {
+    const replyContainer = messageDiv.querySelector('.reply-content');
+    if (!replyContainer) return;
+    replyContainer.innerHTML = ''; // 清空
     for (let i = 0; i < text.length; i++) {
-        if (!isStreaming) break; // 如果被中断则停止
-        bubble.innerHTML += escapeHtml(text[i]);
+        if (!isStreaming) break;
+        replyContainer.innerHTML += escapeHtml(text[i]);
         chatMessages.scrollTop = chatMessages.scrollHeight;
         await new Promise(resolve => setTimeout(resolve, speed));
     }
 }
 
-// 显示思考链提示（气泡内显示“思考中...”）
+// 显示思考指示器（三点动画）
 function showThinkingIndicator() {
     const thinkingDiv = document.createElement('div');
     thinkingDiv.className = 'message assistant';
@@ -78,7 +136,7 @@ function hideThinkingIndicator() {
     if (indicator) indicator.remove();
 }
 
-// 核心发送逻辑（带思考链 + 逐字输出）
+// ======================== 核心发送逻辑 ========================
 async function sendMessageFixed() {
     const userText = chatInput.value.trim();
     if (!userText && !currentFile) {
@@ -86,7 +144,6 @@ async function sendMessageFixed() {
         return;
     }
 
-    // 保存当前消息和文件
     const messageText = userText;
     const fileToSend = currentFile;
     const fileName = fileToSend ? fileToSend.name : '';
@@ -107,12 +164,10 @@ async function sendMessageFixed() {
         filePreview.innerHTML = '';
     }
 
-    // 禁用发送按钮，显示思考指示器
     sendBtn.disabled = true;
     const thinkingDiv = showThinkingIndicator();
 
     try {
-        // 准备请求数据
         const formData = new FormData();
         formData.append('session_id', sessionId);
         formData.append('message', messageText);
@@ -122,7 +177,6 @@ async function sendMessageFixed() {
             formData.append('image', fileToSend);
         }
 
-        // 发起请求
         const res = await fetch('http://localhost:8000/chat', {
             method: 'POST',
             body: formData
@@ -130,33 +184,24 @@ async function sendMessageFixed() {
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        // 隐藏思考指示器
         hideThinkingIndicator();
 
-        // 获取助手的回复内容
-        let assistantReply = data.reply || '抱歉，未获得有效回复。';
+        let assistantFullReply = data.reply || '抱歉，未获得有效回复。';
 
-        // 创建新的助手消息气泡（空内容，准备打字）
-        const assistantMessageDiv = document.createElement('div');
-        assistantMessageDiv.className = 'message assistant';
-        assistantMessageDiv.innerHTML = `<div class="bubble"></div>`;
-        chatMessages.appendChild(assistantMessageDiv);
-        chatMessages.scrollTop = chatMessages.scrollHeight;
+        // 创建带思考链折叠的助手消息容器
+        const { messageDiv, replyText } = addAssistantMessageWithThinking(assistantFullReply, { ticket_id: data.ticket_id });
 
-        // 开始打字机效果（速度 20ms/字）
+        // 开始对最终回复进行打字机输出
         isStreaming = true;
-        await typeText(assistantMessageDiv, assistantReply, 20);
+        await typeTextToReplyContainer(messageDiv, replyText, 20);
         isStreaming = false;
 
-        // 保存对话历史
-        conversationHistory.push({ role: 'assistant', content: assistantReply });
+        // 保存对话历史（保存原始完整回复，包含思考链，以便下次对话上下文）
+        conversationHistory.push({ role: 'assistant', content: assistantFullReply });
 
-        // 如果有工单号，额外显示提示
         if (data.ticket_id) {
-            const ticketDiv = document.createElement('div');
-            ticketDiv.className = 'message assistant';
-            ticketDiv.innerHTML = `<div class="bubble">✅ 已为您生成工单：${escapeHtml(data.ticket_id)}</div>`;
-            chatMessages.appendChild(ticketDiv);
+            // 额外显示工单生成提示（简单消息，无需打字）
+            addMessage('assistant', `✅ 已为您生成工单：${data.ticket_id}`);
             conversationHistory.push({ role: 'assistant', content: `工单号: ${data.ticket_id}` });
         }
 
@@ -173,7 +218,7 @@ async function sendMessageFixed() {
     }
 }
 
-// 文件上传预览逻辑不变
+// ======================== 文件上传 ========================
 if (chatImage && fileLabel) {
     fileLabel.addEventListener('click', () => chatImage.click());
     chatImage.addEventListener('change', () => {
@@ -193,7 +238,7 @@ if (chatImage && fileLabel) {
     });
 }
 
-// 新对话
+// ======================== 新对话 ========================
 function newChat() {
     sessionId = generateSessionId();
     localStorage.setItem('chat_session_id', sessionId);
@@ -211,12 +256,11 @@ function newChat() {
     }
 }
 
-// 绑定事件
+// ======================== 事件绑定 ========================
 if (sendBtn) sendBtn.addEventListener('click', sendMessageFixed);
 if (newChatBtn) newChatBtn.addEventListener('click', newChat);
 if (backBtn) backBtn.addEventListener('click', () => window.location.href = 'welcome.html');
 
-// 回车发送
 chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
