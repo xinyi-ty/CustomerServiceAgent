@@ -55,7 +55,7 @@ CHUNK_OVERLAP = 50  # 分块之间的重叠字符数，保持上下文连贯
 TOP_K = 3  # 检索时返回最相关的段落数量
 
 EMBEDDING_MODEL = "text-embedding-v4"  # 千问 embedding 模型
-DEEPSEEK_MODEL = "deepseek-chat"  # DeepSeek 对话模型
+DEEPSEEK_MODEL = "Qwen/QwQ-32B"  # DeepSeek 对话模型
 
 # ========================= 3. 全局客户端初始化 =========================
 _chroma_client = None  # ChromaDB 客户端（延迟初始化）
@@ -72,7 +72,7 @@ else:
 
 # 检查 DeepSeek API Key（稍后在调用时还会检查一次）
 deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-deepseek_base_url = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com/v1")
+deepseek_base_url = os.getenv("DEEPSEEK_BASE_URL", "https://aigw-nmhhht.cucloud.cn/v1")
 if not deepseek_api_key:
     print("错误: 未找到 DEEPSEEK_API_KEY 环境变量，请检查 .env 文件")
 
