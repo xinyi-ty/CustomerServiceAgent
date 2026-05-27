@@ -2,9 +2,153 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>用户工单提交 - 华工之光客诉系统</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>智能客服助手 - 华工之光客诉系统</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        /* 聊天专用样式（不污染全局） */
+        .chat-container {
+            display: flex;
+            flex-direction: column;
+            height: 65vh;
+            background: #ffffff;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            border: 1px solid #e2e8f0;
+        }
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            background: #f9fafb;
+        }
+        .message {
+            display: flex;
+            max-width: 80%;
+        }
+        .message.user {
+            align-self: flex-end;
+        }
+        .message.assistant {
+            align-self: flex-start;
+        }
+        .bubble {
+            padding: 12px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+            line-height: 1.5;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        .user .bubble {
+            background: #2563eb;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+        .assistant .bubble {
+            background: white;
+            color: #1f2937;
+            border: 1px solid #e5e7eb;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .message-img {
+            max-width: 200px;
+            max-height: 150px;
+            border-radius: 12px;
+            margin-top: 8px;
+            cursor: pointer;
+        }
+        .typing {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 16px;
+        }
+        .typing span {
+            width: 8px;
+            height: 8px;
+            background: #9ca3af;
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 60%, 100% { transform: translateY(0); opacity: 0.4; }
+            30% { transform: translateY(-10px); opacity: 1; }
+        }
+        /* 输入区 */
+        .chat-input-area {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            align-items: flex-end;
+        }
+        .chat-input-area textarea {
+            flex: 1;
+            border: 1px solid #d1d5db;
+            border-radius: 24px;
+            padding: 10px 16px;
+            font-size: 14px;
+            resize: none;
+            font-family: inherit;
+            height: 48px;
+            max-height: 120px;
+        }
+        .chat-input-area button {
+            background: #2563eb;
+            border: none;
+            border-radius: 32px;
+            padding: 10px 20px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .chat-input-area button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+        .file-label {
+            background: #f1f5f9;
+            border-radius: 32px;
+            padding: 10px 16px;
+            cursor: pointer;
+            font-size: 20px;
+        }
+        .file-preview {
+            font-size: 12px;
+            color: #4b5563;
+            margin-top: 4px;
+        }
+        .clear-history {
+            background: none;
+            border: none;
+            color: #6b7280;
+            font-size: 12px;
+            cursor: pointer;
+            margin-left: auto;
+        }
+        .header-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .ticket-badge {
+            background: #10b981;
+            color: white;
+            border-radius: 20px;
+            padding: 2px 8px;
+            font-size: 10px;
+            margin-left: 8px;
+        }
+    </style>
 </head>
 <body>
 
@@ -12,52 +156,34 @@
     <div class="logo">🤖</div>
     <div>
         <h1>智能售后工单系统</h1>
-        <p>AI Complaint Assistant</p>
+        <p>AI Complaint Assistant · 多轮记忆对话</p>
     </div>
-    <div style="margin-left: auto;">
+    <div class="header-right">
+        <button id="newChatBtn" style="background: #e2e8f0; border: none; border-radius: 30px; padding: 6px 16px; cursor: pointer;">✨ 新对话</button>
         <button id="backToWelcome" style="background: #e2e8f0; border: none; border-radius: 30px; padding: 6px 16px; cursor: pointer;">🏠 返回首页</button>
     </div>
 </header>
 
 <main>
-    <!-- 1. 问题输入模块 -->
-    <section class="card">
-        <h2>1. 问题输入</h2>
-        <div class="two-columns">
-            <div class="left">
-                <label>问题描述 <span>*</span></label>
-                <label for="userText"></label><textarea id="userText" placeholder="请详细描述您遇到的问题..." maxlength="1000"></textarea>
-                <div class="counter">0/1000</div>
-                <button id="submitBtn">📤 发送问题</button>
-            </div>
-            <div class="right">
-                <label>上传图片/视频（可选）</label>
-                <div class="upload-box">
-                    <div class="upload-icon">☁️</div>
-                    <h3>点击或拖拽文件到此处</h3>
-                    <p>支持图片、视频格式，大小不超过50MB</p>
-                    <input type="file" id="uploadInput" hidden accept="image/*,video/mp4,video/quicktime">
-                    <button type="button" id="uploadBtn" class="upload-btn">选择文件</button>
-                    <p id="fileInfo">未选择文件</p>
+    <section class="card" style="padding: 0; overflow: hidden;">
+        <div class="chat-container">
+            <div id="chatMessages" class="chat-messages">
+                <!-- 欢迎消息 -->
+                <div class="message assistant">
+                    <div class="bubble">
+                        您好！我是智能客服助手 👋<br>
+                        您可以随时描述遇到的问题，也可以上传图片或视频。<br>
+                        我会根据您的需求生成工单或提供解决方案。
+                    </div>
                 </div>
             </div>
-        </div>
-    </section>
-
-    <!-- 2. 识别结果模块 -->
-    <section class="card">
-        <h2>2. 识别结果</h2>
-        <div id="resultContent" class="result-placeholder">
-            <div class="robot-icon">🤖</div>
-            <h3>尚未生成分析结果</h3>
-            <p>提交问题后，系统将在这里展示以下内容：</p>
-            <div class="feature-cards">
-                <div class="feature-card">🏷 问题类别</div>
-                <div class="feature-card">⚠️ 紧急程度</div>
-                <div class="feature-card">💬 AI回复</div>
-                <div class="feature-card">📋 SOP指导建议</div>
-                <div class="feature-card">🛡 保修状态</div>
+            <div class="chat-input-area">
+                <label class="file-label" id="fileLabel">📎</label>
+                <input type="file" id="chatImage" hidden accept="image/*,video/mp4,video/quicktime">
+                <label for="chatInput"></label><textarea id="chatInput" placeholder="输入您的问题..." rows="1"></textarea>
+                <button id="sendBtn">发送</button>
             </div>
+            <div id="filePreview" class="file-preview" style="padding: 0 16px 12px 16px;"></div>
         </div>
     </section>
 </main>

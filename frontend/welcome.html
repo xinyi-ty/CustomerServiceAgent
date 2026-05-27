@@ -1,297 +1,697 @@
 <!DOCTYPE html>
-<!-- 声明文档类型为 HTML5，告诉浏览器按标准模式解析页面 -->
 <html lang="zh-CN">
-<!-- 根元素，lang 属性指定页面主要语言为中文（简体） -->
 <head>
-    <!-- head 区域存放页面的元数据（不直接显示在页面中） -->
-    <meta charset="UTF-8">
-    <!-- 设置字符编码为 UTF-8，支持中文和 emoji -->
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <!-- 视口设置：宽度等于设备宽度，初始缩放比例为1，允许用户缩放。这是移动端适配的关键 -->
-    <title>华工之光客诉系统</title>
-    <!-- 浏览器标签页上显示的标题 -->
-    <style>
-        /* ========== CSS 样式区域 ========== */
-        /* 基础重置与全局设置 */
-        * {
-            /* 通配选择器 * 表示所有元素 */
-            margin: 0;
-            /* 清除默认外边距 */
-            padding: 0;
-            /* 清除默认内边距 */
-            box-sizing: border-box;
-            /* 盒模型：元素的宽高包含边框和内边距，更方便控制尺寸 */
-        }
+<meta charset="UTF-8" />
+<meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+/>
 
-        body {
-            /* body 是页面主体内容区域 */
-            font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-            /* 字体栈：优先使用 Inter，然后是系统默认等宽字体，最后是 sans-serif 无衬线字体 */
-            background-color: #f8fafc;
-            /* 备用背景颜色（灰白色） */
-            color: #0f172a;
-            /* 默认文字颜色（深灰蓝） */
-            min-height: 100vh;
-            /* 最小高度占满整个视口高度（viewport height） */
-            display: flex;
-            /* 使用弹性布局 */
-            flex-direction: column;
-            /* 主轴方向垂直排列 */
-        }
+<title>华工之光客诉系统</title>
 
-        /* 动态渐变背景 - 科技感与温度的平衡 */
-        .gradient-bg {
-            /* 类选择器，对应 HTML 中的 class="gradient-bg" */
-            position: fixed;
-            /* 固定定位，相对于浏览器窗口定位，不随滚动条滚动 */
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -2;
-            /* z-index 控制层叠顺序，负数表示放在最底层（内容之上） */
-            background: radial-gradient(circle at 10% 20%, rgba(120, 119, 198, 0.1), rgba(255, 255, 255, 0) 70%),
-                        radial-gradient(circle at 90% 30%, rgba(168, 85, 247, 0.08), rgba(255, 255, 255, 0) 70%),
-                        #f8fafc;
-            /* 径向渐变：从圆心向外扩散的颜色变化。这里叠加了两个半透明渐变和一个纯色背景，制造柔和光晕效果 */
-        }
+<style>
 
-        /* 轻微的动态光晕效果，增加质感 */
-        .gradient-bg::before {
-            /* ::before 是伪元素，在 .gradient-bg 内部最前面插入一个虚拟元素 */
-            content: '';
-            /* 必须有 content 属性，哪怕为空 */
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(125deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
-            /* 线性渐变：从左到右，中间亮白，两边透明 */
-            animation: shimmer 15s infinite linear;
-            /* 动画名称 时长 无限次 线性匀速 */
-            pointer-events: none;
-            /* 让这个伪元素不响应鼠标事件，以免遮挡按钮点击 */
-        }
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
 
-        /* 定义名为 shimmer 的动画关键帧 */
-        @keyframes shimmer {
-            0% { transform: translateX(-100%);}
-            /* 动画开始时，向左偏移100%（完全在左侧不可见） */
-            100% { transform: translateX(200%);}
-            /* 动画结束时，向右偏移200%（从右滑出） */
-        }
+:root{
+    --primary:#2563eb;
+    --primary-light:#4f46e5;
+    --text:#0f172a;
+    --sub:#64748b;
+    --border:#e2e8f0;
+}
 
-        /* 内容容器 */
-        .welcome-container {
-            position: relative;
-            /* 相对定位，为内部绝对定位元素提供参考点，但不影响自身布局 */
-            z-index: 1;
-            /* 层级高于背景，让内容显示在背景上方 */
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            /* 水平方向居中对齐（弹性项目交叉轴居中） */
-            justify-content: center;
-            /* 垂直方向居中对齐（弹性项目主轴居中） */
-            text-align: center;
-            /* 文本居中 */
-            min-height: 100vh;
-            /* 占满视口高度 */
-            padding: 2rem;
-            /* 内边距，防止内容贴边 */
-            backdrop-filter: blur(0px);
-            /* 背景模糊效果，这里设为0无模糊，可调节 */
-            transition: backdrop-filter 0.5s ease;
-            /* 过渡效果，方便后续添加悬停模糊变化 */
-        }
+body{
+    font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    sans-serif;
 
-        /* 品牌徽章 - 增加特色与信任感 */
-        .brand-badge {
-            background: rgba(255, 255, 255, 0.6);
-            /* 半透明白色背景 */
-            backdrop-filter: blur(8px);
-            /* 背景模糊（毛玻璃效果） */
-            padding: 0.3rem 1rem;
-            /* 内边距：上下0.3rem，左右1rem。rem 是相对根元素字体大小的单位，默认1rem=16px */
-            border-radius: 40px;
-            /* 圆角，值很大时变成胶囊状 */
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: #4b5563;
-            margin-bottom: 2rem;
-            border: 1px solid rgba(0,0,0,0.05);
-            /* 浅色边框 */
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            /* 轻微阴影，增加立体感 */
-            display: inline-block;
-            /* 行内块元素，宽度根据内容撑开，且可以设置内外边距 */
-        }
+    background:#ffffff;
+    color:var(--text);
+    overflow-x:hidden;
+    min-height:100vh;
+}
 
-        /* 主标题 - 简约且大气 */
-        .welcome-title {
-            font-size: clamp(2.5rem, 8vw, 4.5rem);
-            /* clamp() 函数：最小2.5rem，理想8vw（视口宽度的8%），最大4.5rem。实现响应式字体大小 */
-            font-weight: 700;
-            /* 粗体 */
-            background: linear-gradient(135deg, #1e3c72, #2a5298, #4f46e5);
-            /* 渐变背景（三种颜色） */
-            background-size: 300% 300%;
-            /* 背景尺寸放大，让动画有移动空间 */
-            -webkit-background-clip: text;
-            background-clip: text;
-            /* 背景裁剪为文字区域（实现渐变文字） */
-            color: transparent;
-            /* 文字颜色透明，露出背景渐变 */
-            margin-bottom: 1rem;
-            animation: gradientShift 8s ease infinite;
-            /* 应用渐变移动动画 */
-            letter-spacing: -0.02em;
-            /* 字间距稍微紧凑一点 */
-        }
+/* =======================
+   背景
+======================= */
 
-        /* 渐变文字移动动画 */
-        @keyframes gradientShift {
-            0% { background-position: 0 50%;}
-            50% { background-position: 100% 50%;}
-            100% { background-position: 0 50%;}
-        }
+.grid-bg{
+    position:fixed;
+    inset:0;
+    z-index:-5;
 
-        /* 副标题 */
-        .welcome-sub {
-            font-size: 1.2rem;
-            color: #5b6e8c;
-            margin-bottom: 3rem;
-            max-width: 600px;
-            opacity: 0.9;
-        }
+    background-image:
+        linear-gradient(
+            rgba(15,23,42,.045) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            90deg,
+            rgba(15,23,42,.045) 1px,
+            transparent 1px
+        );
 
-        /* 按钮组 */
-        .button-group {
-            display: flex;
-            gap: 1.5rem;
-            /* flex 子项之间的间距 */
-            flex-wrap: wrap;
-            /* 空间不足时换行 */
-            justify-content: center;
-            margin-top: 0.5rem;
-        }
+    background-size:40px 40px;
+}
 
-        .role-btn {
-            border-radius: 60px;
-            padding: 0.8rem 2rem;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            /* 鼠标指针变为手型 */
-            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
-            /* 过渡动画：所有属性变化时，使用自定义贝塞尔曲线 */
-            width: 180px;
-            background: white;
-            color: #1f2937;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
-            border: 1px solid #e2e8f0;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
+.glow-top{
+    position:fixed;
+    top:-260px;
+    right:-260px;
 
-        /* 针对“我是用户”按钮单独样式（覆盖默认样式） */
-        .role-btn.user {
-            background: white;
-            border: 1px solid #cbd5e1;
-        }
+    width:800px;
+    height:800px;
 
-        /* 针对“我是管理者”按钮的样式 */
-        .role-btn.admin {
-            background: white;
-            border: 1px solid #cbd5e1;
-        }
+    border-radius:50%;
 
-        /* 按钮悬停效果 */
-        .role-btn:hover {
-            transform: translateY(-4px);
-            /* 向上平移4像素 */
-            filter: brightness(1.02);
-            /* 亮度稍微增加 */
-            box-shadow: 0 15px 25px -10px rgba(0,0,0,0.15);
-        }
+    background:
+    radial-gradient(
+        circle,
+        rgba(37,99,235,.12),
+        transparent 70%
+    );
 
-        /* 页脚 */
-        footer {
-            position: absolute;
-            bottom: 25px;
-            /* 距离父容器底部25像素 */
-            color: #94a3b8;
-            font-size: 0.8rem;
-            width: 100%;
-            text-align: center;
-            pointer-events: none;
-            /* 页脚不拦截鼠标事件，避免干扰按钮点击 */
-        }
+    z-index:-3;
+}
 
-        /* 响应式：当屏幕宽度小于等于640像素时，调整按钮布局 */
-        @media (max-width: 640px) {
-            .button-group {
-                gap: 1rem;
-                flex-direction: column;
-                /* 改为垂直排列 */
-                align-items: center;
-            }
-            .role-btn {
-                width: 200px;
-            }
-        }
-    </style>
+.glow-bottom{
+    position:fixed;
+    bottom:-180px;
+    left:-180px;
+
+    width:500px;
+    height:500px;
+
+    border-radius:50%;
+
+    background:
+    radial-gradient(
+        circle,
+        rgba(79,70,229,.08),
+        transparent 70%
+    );
+
+    z-index:-3;
+}
+
+/* =======================
+   主布局
+======================= */
+
+.container{
+    max-width:1400px;
+    margin:auto;
+    min-height:100vh;
+
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+
+    gap:80px;
+    padding:40px;
+}
+
+/* =======================
+   左侧
+======================= */
+
+.left{
+    flex:1;
+    max-width:650px;
+}
+
+.badge{
+    display:inline-flex;
+    align-items:center;
+    gap:10px;
+
+    padding:10px 18px;
+
+    border-radius:999px;
+
+    background:
+    rgba(255,255,255,.9);
+
+    border:
+    1px solid rgba(226,232,240,.9);
+
+    backdrop-filter:blur(12px);
+
+    font-size:14px;
+    font-weight:600;
+    color:#475569;
+
+    margin-bottom:30px;
+}
+
+.badge-dot{
+    width:8px;
+    height:8px;
+    border-radius:50%;
+
+    background:#2563eb;
+
+    box-shadow:
+    0 0 12px
+    rgba(37,99,235,.6);
+}
+
+.title{
+    font-size:
+    clamp(52px,7vw,82px);
+
+    line-height:1.02;
+    letter-spacing:-0.06em;
+    font-weight:800;
+
+    margin-bottom:28px;
+}
+
+.highlight{
+    color:var(--primary);
+}
+
+.subtitle{
+    font-size:19px;
+    line-height:1.9;
+    color:var(--sub);
+
+    max-width:620px;
+    margin-bottom:45px;
+}
+
+/* =======================
+   按钮
+======================= */
+
+.actions{
+    display:flex;
+    gap:18px;
+}
+
+.btn{
+    height:58px;
+    border:none;
+    border-radius:20px;
+
+    padding:0 34px;
+
+    font-size:15px;
+    font-weight:700;
+
+    cursor:pointer;
+    transition:.25s ease;
+}
+
+.primary-btn{
+    background:
+    linear-gradient(
+        135deg,
+        #2563eb,
+        #1d4ed8
+    );
+
+    color:white;
+
+    box-shadow:
+    0 18px 40px
+    rgba(37,99,235,.25);
+}
+
+.primary-btn:hover{
+    transform:
+    translateY(-4px);
+}
+
+.secondary-btn{
+    background:white;
+    border:1px solid var(--border);
+    color:var(--text);
+}
+
+.secondary-btn:hover{
+    background:#f8fafc;
+}
+
+/* =======================
+   右侧视觉区域
+======================= */
+
+.right{
+    flex:1;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+}
+
+.visual-wrapper{
+    position:relative;
+    width:620px;
+    height:620px;
+}
+
+/* 中央 AI 核心 */
+
+.ai-orb{
+    position:absolute;
+    inset:0;
+    margin:auto;
+
+    width:300px;
+    height:300px;
+
+    border-radius:50%;
+
+    background:
+    radial-gradient(
+        circle at 30% 30%,
+        rgba(255,255,255,.95),
+        rgba(59,130,246,.22),
+        rgba(79,70,229,.16)
+    );
+
+    backdrop-filter:blur(30px);
+
+    border:
+    1px solid rgba(255,255,255,.65);
+
+    box-shadow:
+    0 0 80px rgba(37,99,235,.12),
+    inset 0 0 60px rgba(255,255,255,.5);
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    animation:
+    floatOrb 6s ease-in-out infinite;
+}
+
+.logo-core{
+    width:120px;
+    height:120px;
+
+    border-radius:36px;
+
+    background:
+    linear-gradient(
+        135deg,
+        #2563eb,
+        #4f46e5
+    );
+
+    color:white;
+
+    display:flex;
+    align-items:center;
+    justify-content:center;
+
+    font-size:42px;
+    font-weight:800;
+
+    box-shadow:
+    0 20px 50px
+    rgba(37,99,235,.35);
+}
+
+/* 外环 */
+
+.ring{
+    position:absolute;
+    border-radius:50%;
+    border:1px solid
+    rgba(37,99,235,.10);
+
+    top:50%;
+    left:50%;
+
+    transform:
+    translate(-50%,-50%);
+}
+
+.ring-1{
+    width:420px;
+    height:420px;
+    animation:rotateSlow 22s linear infinite;
+}
+
+.ring-2{
+    width:520px;
+    height:520px;
+    animation:rotateSlowReverse 28s linear infinite;
+}
+
+.ring-3{
+    width:620px;
+    height:620px;
+    opacity:.6;
+}
+
+/* 漂浮粒子 */
+
+.dot{
+    position:absolute;
+    border-radius:50%;
+    background:#2563eb;
+    box-shadow:
+    0 0 18px rgba(37,99,235,.4);
+}
+
+.dot1{
+    width:10px;
+    height:10px;
+    top:90px;
+    left:140px;
+}
+
+.dot2{
+    width:14px;
+    height:14px;
+    right:120px;
+    top:180px;
+}
+
+.dot3{
+    width:8px;
+    height:8px;
+    bottom:160px;
+    left:100px;
+}
+
+.dot4{
+    width:12px;
+    height:12px;
+    right:160px;
+    bottom:120px;
+}
+
+/* 浮动标签 */
+
+.floating-card{
+    position:absolute;
+
+    background:
+    rgba(255,255,255,.72);
+
+    backdrop-filter:blur(20px);
+
+    border:
+    1px solid rgba(255,255,255,.6);
+
+    border-radius:24px;
+
+    padding:18px 22px;
+
+    box-shadow:
+    0 20px 40px
+    rgba(15,23,42,.06);
+}
+
+.fc1{
+    top:80px;
+    left:0;
+}
+
+.fc2{
+    right:0;
+    top:120px;
+}
+
+.fc3{
+    bottom:100px;
+    left:30px;
+}
+
+.card-title{
+    font-size:15px;
+    font-weight:700;
+    margin-bottom:6px;
+}
+
+.card-sub{
+    font-size:13px;
+    color:var(--sub);
+}
+
+/* =======================
+   动画
+======================= */
+
+@keyframes floatOrb{
+    0%{
+        transform:translateY(0);
+    }
+    50%{
+        transform:translateY(-12px);
+    }
+    100%{
+        transform:translateY(0);
+    }
+}
+
+@keyframes rotateSlow{
+    from{
+        transform:
+        translate(-50%,-50%)
+        rotate(0deg);
+    }
+
+    to{
+        transform:
+        translate(-50%,-50%)
+        rotate(360deg);
+    }
+}
+
+@keyframes rotateSlowReverse{
+    from{
+        transform:
+        translate(-50%,-50%)
+        rotate(360deg);
+    }
+
+    to{
+        transform:
+        translate(-50%,-50%)
+        rotate(0deg);
+    }
+}
+
+/* =======================
+   入场动画
+======================= */
+
+.left{
+    animation:
+    fadeUp .8s ease;
+}
+
+.right{
+    animation:
+    fadeUp 1s ease;
+}
+
+@keyframes fadeUp{
+    from{
+        opacity:0;
+        transform:
+        translateY(40px);
+    }
+
+    to{
+        opacity:1;
+        transform:
+        translateY(0);
+    }
+}
+
+/* =======================
+   响应式
+======================= */
+
+@media(max-width:1100px){
+
+    .container{
+        flex-direction:column;
+        text-align:center;
+
+        gap:50px;
+        padding-top:80px;
+    }
+
+    .left{
+        display:flex;
+        flex-direction:column;
+        align-items:center;
+    }
+
+    .actions{
+        width:100%;
+        flex-direction:column;
+    }
+
+    .btn{
+        width:100%;
+    }
+
+    .visual-wrapper{
+        width:100%;
+        max-width:520px;
+        height:520px;
+    }
+
+    .floating-card{
+        display:none;
+    }
+
+    .ring-3{
+        width:500px;
+        height:500px;
+    }
+}
+
+</style>
 </head>
+
 <body>
 
-<!-- 背景层（全屏固定渐变背景） -->
-<div class="gradient-bg"></div>
+<div class="grid-bg"></div>
+<div class="glow-top"></div>
+<div class="glow-bottom"></div>
 
-<!-- 主要内容容器 -->
-<div class="welcome-container">
-    <!-- 品牌徽章：一个精致的小标签 -->
-    <div class="brand-badge">
-        ✨ 智能客诉处理系统 ✨
-    </div>
-    <!-- 主标题 -->
-    <div class="welcome-title">
-        华工之光客诉系统
-    </div>
-    <!-- 副标题描述 -->
-    <div class="welcome-sub">
-        AI Complaint Assistant — 快速响应 · 全程可追溯
-    </div>
-    <!-- 按钮组，包含两个入口 -->
-    <div class="button-group">
-        <!-- 用户入口按钮，点击后跳转到 user.html 页面 -->
-        <button class="role-btn user" id="userBtn">
-            我是用户
-        </button>
-        <!-- 管理者入口按钮，点击后跳转到 admin.html 页面 -->
-        <button class="role-btn admin" id="adminBtn">
-            我是管理者
-        </button>
-    </div>
-    <!-- 页脚信息 -->
-    <footer>
-        智能客诉处理 · 快速响应 · 全程可追溯
-    </footer>
+<div class="container">
+
+    <!-- 左侧 -->
+
+    <section class="left">
+
+        <div class="badge">
+            <div class="badge-dot"></div>
+            AI SERVICE PORTAL
+        </div>
+
+        <h1 class="title">
+            华工之光<br>
+            <span class="highlight">
+                智能客诉服务平台
+            </span>
+        </h1>
+
+        <p class="subtitle">
+            面向售后场景构建的智能服务入口，
+            聚焦问题受理、流程协同与服务体验提升。
+            通过更自然的人机交互方式，
+            帮助用户更高效地完成问题反馈与处理。
+        </p>
+
+        <div class="actions">
+
+            <button
+                class="btn primary-btn"
+                id="userBtn"
+            >
+                进入系统 →
+            </button>
+
+            <button
+                class="btn secondary-btn"
+                id="adminBtn"
+            >
+                管理入口
+            </button>
+
+        </div>
+
+    </section>
+
+    <!-- 右侧 -->
+
+    <section class="right">
+
+        <div class="visual-wrapper">
+
+            <div class="ring ring-1"></div>
+            <div class="ring ring-2"></div>
+            <div class="ring ring-3"></div>
+
+            <div class="dot dot1"></div>
+            <div class="dot dot2"></div>
+            <div class="dot dot3"></div>
+            <div class="dot dot4"></div>
+
+            <div class="floating-card fc1">
+                <div class="card-title">
+                    智能识别
+                </div>
+
+                <div class="card-sub">
+                    自然交互体验
+                </div>
+            </div>
+
+            <div class="floating-card fc2">
+                <div class="card-title">
+                    多模态支持
+                </div>
+
+                <div class="card-sub">
+                    文本与图像处理
+                </div>
+            </div>
+
+            <div class="floating-card fc3">
+                <div class="card-title">
+                    服务协同
+                </div>
+
+                <div class="card-sub">
+                    更高效的问题处理
+                </div>
+            </div>
+
+            <div class="ai-orb">
+
+                <div class="logo-core">
+                    AI
+                </div>
+
+            </div>
+
+        </div>
+
+    </section>
+
 </div>
 
-<!-- JavaScript 代码区域：处理按钮点击跳转 -->
 <script>
-    // document.getElementById('userBtn') 获取页面中 id 为 userBtn 的元素
-    // addEventListener 为该元素添加“点击”事件监听器，第二个参数是点击后执行的箭头函数
-    document.getElementById('userBtn').addEventListener('click', () => {
-        // window.location.href 是当前浏览器窗口的网址，将其修改为 'user.html' 就会跳转
-        window.location.href = 'user.html';
-    });
-    document.getElementById('adminBtn').addEventListener('click', () => {
-        window.location.href = 'admin.html';
-    });
+
+document
+.getElementById('userBtn')
+.addEventListener('click',()=>{
+
+    window.location.href =
+    'user.html';
+
+});
+
+document
+.getElementById('adminBtn')
+.addEventListener('click',()=>{
+
+    window.location.href =
+    'admin.html';
+
+});
+
 </script>
+
 </body>
 </html>

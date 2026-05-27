@@ -1,5 +1,5 @@
 # backend/main.py
-
+from chat_router import router as chat_router
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
@@ -49,6 +49,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="客诉自动回复与出单分发智能体", lifespan=lifespan)
+app.include_router(chat_router)
 
 # 允许跨域（前端调用）
 app.add_middleware(

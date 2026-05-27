@@ -5,59 +5,64 @@
 }
 
 body {
-    background: #f0f2f5;
+    background: #f8fafc;
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
-    padding: 20px;
+    padding: 24px;
     max-width: 1200px;
     margin: 0 auto;
+    color: #334155;
 }
 
-/* 头部 */
+/* 头部面罩与阴影升级 */
 .header {
     display: flex;
     align-items: center;
     gap: 16px;
     background: white;
-    padding: 12px 24px;
-    border-radius: 28px;
-    margin-bottom: 20px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.04);
+    padding: 16px 28px;
+    border-radius: 20px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+    border: 1px solid #e2e8f0;
 }
 .logo {
-    background: #2563eb;
+    background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
     width: 48px;
     height: 48px;
-    border-radius: 28px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 26px;
+    font-size: 24px;
     color: white;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.18);
 }
 .header h1 {
-    font-size: 22px;
-    font-weight: 600;
+    font-size: 20px;
+    font-weight: 700;
     color: #0f172a;
 }
 .header p {
-    font-size: 13px;
-    color: #475569;
+    font-size: 12px;
+    color: #64748b;
     margin-top: 2px;
+    font-weight: 500;
 }
 
-/* 卡片通用 */
+/* 卡片通用优化 */
 .card {
     background: white;
-    border-radius: 24px;
-    padding: 18px 24px;
-    margin-bottom: 18px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    border-radius: 20px;
+    padding: 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+    border: 1px solid #e2e8f0;
 }
 .card h2 {
-    font-size: 18px;
-    font-weight: 600;
-    margin-bottom: 14px;
-    color: #1e293b;
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 18px;
+    color: #0f172a;
     border-left: 4px solid #2563eb;
     padding-left: 12px;
 }
@@ -70,124 +75,148 @@ body {
 }
 .left {
     flex: 2;
-    min-width: 220px;
+    min-width: 280px;
 }
 .right {
     flex: 1;
-    min-width: 200px;
+    min-width: 240px;
 }
 
 label {
-    font-size: 14px;
-    font-weight: 500;
-    margin-bottom: 6px;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 8px;
     display: block;
-    color: #1f2937;
+    color: #475569;
 }
 label span {
-    color: #e53e3e;
+    color: #ef4444;
 }
 
+/* 输入控件柔和化 */
 textarea {
     width: 100%;
     border: 1px solid #cbd5e1;
-    border-radius: 14px;
-    padding: 10px 12px;
+    border-radius: 12px;
+    padding: 12px;
     font-size: 14px;
     font-family: inherit;
     resize: vertical;
-    height: 100px;
-    line-height: 1.4;
+    height: 120px;
+    line-height: 1.5;
+    color: #0f172a;
+    background-color: #f8fafc;
+    transition: all 0.2s;
 }
 textarea:focus {
     outline: none;
     border-color: #2563eb;
-    box-shadow: 0 0 0 2px rgba(37,99,235,0.1);
+    background-color: #fff;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
 }
 .counter {
     text-align: right;
     font-size: 12px;
-    color: #6b7280;
-    margin-top: 4px;
+    color: #94a3b8;
+    margin-top: 6px;
 }
 #submitBtn {
-    background: #2563eb;
+    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
     color: white;
     border: none;
-    border-radius: 32px;
-    padding: 8px 20px;
+    border-radius: 12px;
+    padding: 12px 24px;
     font-size: 14px;
-    font-weight: 500;
-    margin-top: 14px;
+    font-weight: 600;
+    margin-top: 16px;
     cursor: pointer;
     width: 100%;
-    transition: background 0.2s;
+    transition: all 0.2s;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
 #submitBtn:hover {
-    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
 }
 #submitBtn:disabled {
-    background: #94a3b8;
+    background: #cbd5e1;
+    box-shadow: none;
+    cursor: not-allowed;
 }
 
+/* 上传模块细腻化 */
 .upload-box {
-    border: 1px dashed #9ca3af;
-    border-radius: 18px;
-    background: #fafcff;
-    padding: 16px 12px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 16px;
+    background: #f8fafc;
+    padding: 24px 16px;
     text-align: center;
+    transition: all 0.2s;
+}
+.upload-box:hover {
+    border-color: #2563eb;
+    background: #f0f6ff;
 }
 .upload-icon {
-    font-size: 32px;
-    margin-bottom: 6px;
+    font-size: 36px;
+    margin-bottom: 8px;
+    color: #3b82f6;
 }
 .upload-box h3 {
     font-size: 14px;
-    font-weight: 500;
+    font-weight: 600;
+    color: #334155;
     margin: 6px 0;
 }
 .upload-box p {
     font-size: 12px;
-    color: #556c8a;
-    margin: 6px 0;
+    color: #64748b;
+    margin: 4px 0;
 }
 .upload-btn {
     background: white;
-    border: 1px solid #2563eb;
-    border-radius: 30px;
-    padding: 5px 16px;
+    border: 1px solid #cbd5e1;
+    border-radius: 10px;
+    padding: 6px 16px;
     font-size: 12px;
+    font-weight: 600;
+    color: #475569;
     cursor: pointer;
-    margin: 8px 0 4px;
+    margin: 12px 0 4px;
+    transition: all 0.2s;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 .upload-btn:hover {
-    background: #eff6ff;
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #fff;
 }
 #fileInfo {
-    font-size: 11px;
-    color: #4b5563;
-    margin-top: 6px;
-    word-break: break-all;
+    font-size: 12px;
+    color: #64748b;
+    margin-top: 8px;
+    font-weight: 500;
 }
 
-/* 识别结果样式（仿图二卡片） */
+/* 识别结果卡片 */
 .result-placeholder {
     text-align: center;
-    padding: 10px 0 6px;
+    padding: 20px 0;
 }
 .robot-icon {
     font-size: 48px;
-    margin-bottom: 8px;
+    margin-bottom: 12px;
 }
 .result-placeholder h3 {
     font-size: 18px;
-    margin: 4px 0;
-    color: #1e293b;
+    margin: 6px 0;
+    color: #0f172a;
+    font-weight: 700;
 }
 .result-placeholder p {
     font-size: 13px;
-    color: #6c7a91;
-    margin-bottom: 16px;
+    color: #64748b;
+    margin-bottom: 20px;
 }
 .feature-cards {
     display: flex;
@@ -197,64 +226,59 @@ textarea:focus {
 }
 .feature-card {
     background: #f8fafc;
-    border-radius: 40px;
-    padding: 6px 18px;
+    border-radius: 12px;
+    padding: 10px 20px;
     font-size: 13px;
-    font-weight: 500;
-    color: #0f172a;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    font-weight: 600;
+    color: #334155;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
     border: 1px solid #e2e8f0;
+    transition: all 0.2s;
 }
-/* 动态生成的实际卡片样式（与占位一致） */
-.result-card {
-    background: #f1f5f9;
-    border-radius: 40px;
-    padding: 6px 18px;
-    font-size: 13px;
-    font-weight: 500;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
+.feature-card:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    transform: translateY(-1px);
 }
 
-/* 历史工单 */
-.history-placeholder {
-    text-align: center;
-    padding: 16px 0;
-}
-.history-icon {
-    font-size: 42px;
-    color: #94a3b8;
-    margin-bottom: 8px;
-}
-.history-placeholder h3 {
-    font-size: 16px;
-    color: #334155;
-    margin-bottom: 6px;
-}
-.history-placeholder p {
-    font-size: 13px;
-    color: #6c7a91;
+/* 历史工单细腻纹理 */
+.history-list {
+    max-height: 70vh;
+    overflow-y: auto;
+    padding-right: 4px;
 }
 .history-card {
     background: #f8fafc;
-    border-radius: 16px;
-    padding: 12px 16px;
-    margin-bottom: 12px;
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
     text-align: left;
     border-left: 4px solid #2563eb;
+    border-top: 1px solid #e2e8f0;
+    border-right: 1px solid #e2e8f0;
+    border-bottom: 1px solid #e2e8f0;
+    transition: all 0.2s;
+}
+.history-card:hover {
+    transform: translateX(2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
 }
 .history-card h4 {
     font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 6px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 8px;
 }
 .history-card p {
-    font-size: 12px;
+    font-size: 13px;
     color: #475569;
+    line-height: 1.6;
+    margin-bottom: 4px;
+}
+.history-card p strong {
+    color: #0f172a;
 }
 
-/* 响应式 */
 @media (max-width: 720px) {
     body {
         padding: 12px;
@@ -265,8 +289,5 @@ textarea:focus {
     .two-columns {
         flex-direction: column;
         gap: 16px;
-    }
-    textarea {
-        height: 90px;
     }
 }
