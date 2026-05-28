@@ -77,7 +77,8 @@ class Ticket(BaseModel):
     agent_business_assessment: AgentBusinessAssessment
     routing_decision: str = Field(..., description="路由决策结果 (如: general_manager_dashboard)")
     auto_reply_sent: str = Field(..., description="发送给用户的完整回复 (含 SOP)")
-    status: TicketStatus = Field(TicketStatus.PENDING)
+    status: TicketStatus = Field(TicketStatus.PENDING, description="工单当前状态")
+
 
 # ==========================================
 # 4. 列表查询与分页响应
