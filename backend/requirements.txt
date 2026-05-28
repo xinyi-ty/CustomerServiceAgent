@@ -19,3 +19,8 @@ openai>=1.0.0       # 用于 deepseek 兼容 OpenAI API
 python-dotenv>=1.0.0
 app
 Form
+
+
+#llm
+pydantic
+tenacity

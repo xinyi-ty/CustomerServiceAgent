@@ -1,626 +1,152 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>智能售后助手</title>
-
-<style>
-/* ========== 蓝白配色 + 精致细节 ========== */
-:root {
-    --bg-white: #ffffff;
-    --bg-light: #f5f7fb;
-    --sidebar-bg: #fafcff;
-    --border-light: #e6edf4;
-    --text-primary: #1e2a3e;
-    --text-secondary: #5c6f87;
-    --accent-blue: #3b82f6;
-    --accent-hover: #2563eb;
-    --accent-soft: #eff6ff;
-    --shadow-sm: 0 1px 2px rgba(0,0,0,0.02);
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    background: var(--bg-light);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
-    color: var(--text-primary);
-    height: 100vh;
-    overflow: hidden;
-}
-
-.app {
-    display: flex;
-    height: 100vh;
-}
-
-/* ========== 左侧边栏（增加细腻层次） ========== */
-.sidebar {
-    width: 280px;
-    background: var(--sidebar-bg);
-    border-right: 1px solid var(--border-light);
-    display: flex;
-    flex-direction: column;
-    padding: 20px 16px;
-    position: relative;
-    backdrop-filter: blur(2px);
-}
-
-/* 品牌区 */
-.brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 8px 20px 8px;
-    border-bottom: 1px solid var(--border-light);
-    margin-bottom: 20px;
-}
-
-.brand-logo {
-    width: 36px;
-    height: 36px;
-    background: var(--accent-blue);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 18px;
-    box-shadow: 0 2px 6px rgba(59,130,246,0.2);
-}
-
-.brand-text {
-    font-weight: 600;
-    font-size: 16px;
-    color: var(--text-primary);
-}
-
-.brand-sub {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 2px;
-}
-
-/* 新建对话按钮 */
-.new-chat-btn {
-    width: 100%;
-    padding: 10px 12px;
-    background: var(--accent-blue);
-    border: none;
-    border-radius: 28px;
-    font-size: 14px;
-    font-weight: 500;
-    color: white;
-    cursor: pointer;
-    transition: all 0.2s;
-    margin-bottom: 24px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-}
-
-.new-chat-btn:hover {
-    background: var(--accent-hover);
-    transform: translateY(-1px);
-}
-
-/* 对话历史区域 */
-.chat-history {
-    flex: 1;
-    overflow-y: auto;
-}
-
-.history-title {
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--text-secondary);
-    margin-bottom: 12px;
-    padding-left: 8px;
-    letter-spacing: 0.3px;
-}
-
-.history-item {
-    padding: 10px 12px;
-    border-radius: 12px;
-    cursor: pointer;
-    transition: background 0.2s;
-    margin-bottom: 4px;
-}
-
-.history-item:hover {
-    background: rgba(59,130,246,0.06);
-}
-
-.history-item.active {
-    background: var(--accent-soft);
-    border-left: 3px solid var(--accent-blue);
-}
-
-.history-text {
-    font-size: 14px;
-    font-weight: 500;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.history-time {
-    font-size: 11px;
-    color: var(--text-secondary);
-    margin-top: 4px;
-}
-
-/* 工单查询折叠区域 */
-.ticket-search {
-    margin: 16px 0 12px;
-    border-top: 1px solid var(--border-light);
-    padding-top: 16px;
-}
-
-.collapse-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    cursor: pointer;
-    padding: 4px 0;
-}
-
-.collapse-header .history-title {
-    margin-bottom: 0;
-}
-
-.collapse-icon {
-    font-size: 12px;
-    color: var(--text-secondary);
-    transition: transform 0.2s;
-}
-
-.collapse-icon.collapsed {
-    transform: rotate(-90deg);
-}
-
-.collapse-content {
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-    max-height: 500px;
-}
-
-.collapse-content.collapsed {
-    max-height: 0;
-}
-
-#userSearchTicket {
-    width: 100%;
-    padding: 10px 14px;
-    border: 1px solid var(--border-light);
-    border-radius: 28px;
-    font-size: 14px;
-    background: var(--bg-white);
-    transition: 0.2s;
-}
-
-#userSearchTicket:focus {
-    outline: none;
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
-}
-
-#userSearchBtn {
-    background: var(--accent-blue);
-    border: none;
-    border-radius: 28px;
-    padding: 0 18px;
-    color: white;
-    font-weight: 500;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-#userSearchBtn:hover {
-    background: var(--accent-hover);
-}
-
-#searchResult {
-    margin-top: 12px;
-    max-height: 320px;
-    overflow-y: auto;
-    font-size: 13px;
-}
-
-#searchResult > div {
-    background: var(--bg-white);
-    border-radius: 16px;
-    padding: 12px;
-    margin-bottom: 10px;
-    border: 1px solid var(--border-light);
-    box-shadow: var(--shadow-sm);
-}
-
-/* 侧边栏底部 */
-.sidebar-footer {
-    border-top: 1px solid var(--border-light);
-    padding-top: 16px;
-    margin-top: auto;
-}
-
-.back-btn {
-    width: 100%;
-    padding: 10px;
-    background: transparent;
-    border: 1px solid var(--border-light);
-    border-radius: 28px;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: 0.2s;
-    color: var(--text-secondary);
-}
-
-.back-btn:hover {
-    background: rgba(59,130,246,0.04);
-    border-color: var(--accent-blue);
-}
-
-/* ========== 主内容区（无顶部横线、无底部横线） ========== */
-.main {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    background: var(--bg-white);
-}
-
-/* 顶部区域 - 无横线，更紧凑 */
-.header {
-    height: 64px;
-    display: flex;
-    align-items: center;
-    padding: 0 28px;
-    background: var(--bg-white);
-}
-
-.header-title {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.header-sub {
-    font-size: 13px;
-    color: var(--text-secondary);
-    margin-left: 12px;
-}
-
-/* 聊天区域 */
-.chat-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 24px 0;
-}
-
-#chatMessages {
-    max-width: 800px;
-    margin: 0 auto;
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
-/* 消息气泡 - 蓝白调，圆润 */
-.message {
-    display: flex;
-}
-
-.message.user {
-    justify-content: flex-end;
-}
-
-.message.assistant {
-    justify-content: flex-start;
-}
-
-.bubble {
-    max-width: 80%;
-    padding: 12px 18px;
-    border-radius: 26px;
-    line-height: 1.6;
-    font-size: 15px;
-    white-space: pre-wrap;
-    word-break: break-word;
-    box-shadow: 0 1px 1px rgba(0,0,0,0.02);
-}
-
-.user .bubble {
-    background: var(--accent-blue);
-    color: white;
-    border-bottom-right-radius: 8px;
-}
-
-.assistant .bubble {
-    background: var(--bg-light);
-    color: var(--text-primary);
-    border: 1px solid var(--border-light);
-    border-bottom-left-radius: 8px;
-}
-
-/* 思考链样式 */
-.think-container {
-    margin-bottom: 12px;
-    border-radius: 18px;
-    overflow: hidden;
-    border: 1px solid var(--border-light);
-    background: var(--bg-white);
-}
-
-.think-summary {
-    padding: 10px 14px;
-    background: #f8fafd;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--text-secondary);
-}
-
-.think-content {
-    padding: 12px 14px;
-    background: var(--bg-white);
-    font-size: 12px;
-    line-height: 1.6;
-    color: var(--text-secondary);
-    border-top: 1px solid var(--border-light);
-}
-
-/* 工单徽章 */
-.ticket-badge {
-    display: inline-block;
-    margin-top: 12px;
-    padding: 4px 12px;
-    border-radius: 20px;
-    background: var(--accent-soft);
-    color: var(--accent-blue);
-    font-size: 12px;
-    font-weight: 500;
-}
-
-/* 工单预览卡片 */
-.ticket-preview-card {
-    background: #fff9f0;
-    border-left: 4px solid #f97316;
-    border-radius: 18px;
-    padding: 14px;
-    margin-top: 12px;
-}
-
-.ticket-preview-card h4 {
-    font-size: 14px;
-    margin-bottom: 8px;
-    color: #c2410c;
-}
-
-.preview-buttons {
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-    margin-top: 12px;
-}
-
-.preview-buttons button {
-    padding: 6px 16px;
-    border-radius: 30px;
-    font-size: 13px;
-    cursor: pointer;
-    border: none;
-}
-
-.confirm-create {
-    background: #f97316;
-    color: white;
-}
-
-.cancel-create {
-    background: #e2e8f0;
-    color: #333;
-}
-
-/* 底部输入区 - 无横线，简洁 */
-.chat-footer {
-    padding: 20px 24px 24px;
-    background: var(--bg-white);
-}
-
-.input-wrapper {
-    max-width: 800px;
-    margin: 0 auto;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    background: var(--bg-light);
-    border: 1px solid var(--border-light);
-    border-radius: 40px;
-    padding: 4px 6px 4px 16px;
-    transition: all 0.2s;
-}
-
-.input-wrapper:focus-within {
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
-}
-
-/* 上传按钮：纯符号“+”，悬浮效果 */
-.upload-btn {
-    background: transparent;
-    border: none;
-    font-size: 22px;
-    font-weight: 400;
-    color: var(--text-secondary);
-    cursor: pointer;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.2s;
-}
-
-.upload-btn:hover {
-    background: rgba(0,0,0,0.05);
-    color: var(--accent-blue);
-}
-
-textarea {
-    flex: 1;
-    border: none;
-    outline: none;
-    resize: none;
-    font-size: 15px;
-    line-height: 1.5;
-    font-family: inherit;
-    background: transparent;
-    min-height: 24px;
-    max-height: 160px;
-    padding: 8px 0;
-}
-
-.send-btn {
-    background: var(--accent-blue);
-    border: none;
-    color: white;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: background 0.2s;
-}
-
-.send-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-.send-btn:hover:not(:disabled) {
-    background: var(--accent-hover);
-}
-
-#filePreview {
-    max-width: 800px;
-    margin: 8px auto 0;
-    font-size: 12px;
-    color: var(--text-secondary);
-    padding-left: 48px;
-}
-
-/* 滚动条 */
-::-webkit-scrollbar {
-    width: 6px;
-}
-
-::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-::-webkit-scrollbar-thumb {
-    background: #cbd5e1;
-    border-radius: 6px;
-}
-
-/* 响应式 */
-@media (max-width: 900px) {
-    .sidebar {
-        display: none;
-    }
-    .header {
-        padding: 0 16px;
-    }
-    .chat-container {
-        padding: 16px;
-    }
-    .bubble {
-        max-width: 90%;
-    }
-}
-</style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>智能售后助手 - 客户端</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        /* 用户端专属样式补充 */
+        .app { display: flex; height: 100vh; background: #f5f7fb; }
+
+        /* 侧边栏 */
+        .sidebar { width: 280px; background: #fafcff; border-right: 1px solid #e6edf4; display: flex; flex-direction: column; padding: 20px 16px; }
+        .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 20px 8px; border-bottom: 1px solid #e6edf4; margin-bottom: 20px; }
+        .brand-logo { width: 36px; height: 36px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
+        .brand-text { font-weight: 600; font-size: 16px; color: #1e2a3e; }
+        .brand-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+
+        .new-chat-btn { width: 100%; padding: 10px 12px; background: #2563eb; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; color: white; cursor: pointer; transition: all 0.2s; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .new-chat-btn:hover { background: #1d4ed8; }
+        .icon-plus { width: 14px; height: 14px; position: relative; }
+        .icon-plus::before, .icon-plus::after { content: ''; position: absolute; background: white; border-radius: 1px; }
+        .icon-plus::before { width: 14px; height: 2px; top: 6px; left: 0; }
+        .icon-plus::after { width: 2px; height: 14px; left: 6px; top: 0; }
+
+        .history-title { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 12px; padding-left: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+        /* 工单查询折叠区 */
+        .ticket-search { margin-top: auto; border-top: 1px solid #e6edf4; padding-top: 16px; }
+        .collapse-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 4px 8px; }
+        .collapse-icon { font-size: 10px; color: #64748b; transition: transform 0.2s; }
+        .collapse-icon.collapsed { transform: rotate(-90deg); }
+        .collapse-content { overflow: hidden; transition: max-height 0.3s ease; max-height: 500px; margin-top: 8px; }
+        .collapse-content.collapsed { max-height: 0; margin-top: 0; }
+
+        .search-row { display: flex; gap: 8px; padding: 0 8px; }
+        #userSearchTicket { flex: 1; padding: 8px 12px; border: 1px solid #e6edf4; border-radius: 6px; font-size: 13px; background: white; }
+        #userSearchTicket:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
+        #userSearchBtn { background: #2563eb; border: none; border-radius: 6px; padding: 0 14px; color: white; font-weight: 500; cursor: pointer; font-size: 13px; }
+        #searchResult { padding: 0 8px; margin-top: 12px; max-height: 200px; overflow-y: auto; font-size: 12px; }
+        .search-result-item { background: white; border: 1px solid #e6edf4; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+
+        .sidebar-footer { padding: 16px 8px 0; }
+        .back-btn { width: 100%; padding: 10px; background: transparent; border: 1px solid #e6edf4; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: 0.2s; color: #64748b; }
+        .back-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+
+        /* 主内容区 */
+        .main { flex: 1; display: flex; flex-direction: column; background: white; }
+        .header { height: 60px; display: flex; align-items: center; padding: 0 28px; border-bottom: 1px solid #f1f5f9; }
+        .header-title { font-size: 16px; font-weight: 600; color: #1e2a3e; }
+
+        .chat-container { flex: 1; overflow-y: auto; padding: 24px 0; }
+        #chatMessages { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding: 0 24px; }
+
+        .message { display: flex; }
+        .message.user { justify-content: flex-end; }
+        .bubble { max-width: 80%; padding: 12px 16px; border-radius: 12px; line-height: 1.6; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
+        .user .bubble { background: #2563eb; color: white; border-bottom-right-radius: 2px; }
+        .assistant .bubble { background: #f8fafc; color: #1e2a3e; border: 1px solid #e2e8f0; border-bottom-left-radius: 2px; }
+
+        /* 思考过程 */
+        .think-container { margin-bottom: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; background: white; font-size: 12px; }
+        .think-summary { padding: 8px 12px; background: #f1f5f9; cursor: pointer; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px; }
+        .think-content { padding: 10px 12px; background: white; line-height: 1.6; color: #64748b; border-top: 1px solid #e2e8f0; display: none; }
+
+        /* 工单生成徽章 */
+        .ticket-badge { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding: 8px 12px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 12px; font-weight: 500; }
+        .badge-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; }
+
+        /* 底部输入区 */
+        .chat-footer { padding: 16px 24px 24px; background: white; border-top: 1px solid #f1f5f9; }
+        .input-wrapper { max-width: 800px; margin: 0 auto; display: flex; align-items: flex-end; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px 12px; transition: all 0.2s; }
+        .input-wrapper:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: white; }
+
+        .upload-btn { background: transparent; border: 1px solid #cbd5e1; font-size: 18px; color: #64748b; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+        .upload-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+
+        textarea { flex: 1; border: none; outline: none; resize: none; font-size: 14px; line-height: 1.5; font-family: inherit; background: transparent; min-height: 24px; max-height: 120px; padding: 4px 0; }
+
+        .send-btn { background: #2563eb; border: none; color: white; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
+        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        .send-btn:hover:not(:disabled) { background: #1d4ed8; }
+        .icon-arrow { width: 12px; height: 12px; border-top: 2px solid white; border-right: 2px solid white; transform: rotate(-45deg) translate(-1px, 1px); }
+
+        #filePreview { max-width: 800px; margin: 8px auto 0; font-size: 12px; color: #64748b; padding-left: 44px; }
+    </style>
 </head>
-
 <body>
-<div class="app">
-    <aside class="sidebar">
-        <div class="brand">
-            <div class="brand-logo">AI</div>
-            <div>
-                <div class="brand-text">智能售后助手</div>
-                <div class="brand-sub">Huagong AI Service</div>
-            </div>
-        </div>
-        <button id="newChatBtn" class="new-chat-btn">➕ 新建对话</button>
-        <div class="chat-history">
-            <div class="history-title">最近对话</div>
-            <div class="history-item active">
-                <div class="history-text">当前会话</div>
-                <div class="history-time">刚刚</div>
-            </div>
-        </div>
-
-        <!-- 可折叠工单查询模块 -->
-        <div class="ticket-search">
-            <div class="collapse-header" id="collapseHeader">
-                <div class="history-title">工单查询</div>
-                <span class="collapse-icon" id="collapseIcon">▼</span>
-            </div>
-            <div class="collapse-content" id="collapseContent">
-                <div style="display: flex; gap: 8px; margin-top: 8px;">
-                    <input type="text" id="userSearchTicket" placeholder="输入工单号" />
-                    <button id="userSearchBtn">查询</button>
+    <div class="app">
+        <aside class="sidebar">
+            <div class="brand">
+                <div class="brand-logo">AI</div>
+                <div>
+                    <div class="brand-text">智能售后助手</div>
+                    <div class="brand-sub">Enterprise Service</div>
                 </div>
-                <div id="searchResult"></div>
             </div>
-        </div>
 
-        <div class="sidebar-footer">
-            <button id="backToWelcome" class="back-btn">返回首页</button>
-        </div>
-    </aside>
+            <button id="newChatBtn" class="new-chat-btn">
+                <span class="icon-plus"></span> 新建对话
+            </button>
 
-    <main class="main">
-        <header class="header">
-            <div>
-                <div class="header-title">智能售后助手</div>
-                <div class="header-sub">智能问题分析与工单协同</div>
+            <div class="ticket-search">
+                <div class="collapse-header" id="collapseHeader">
+                    <div class="history-title">工单查询</div>
+                    <span class="collapse-icon" id="collapseIcon">▼</span>
+                </div>
+                <div class="collapse-content" id="collapseContent">
+                    <div class="search-row">
+                        <input type="text" id="userSearchTicket" placeholder="输入工单号查询" />
+                        <button id="userSearchBtn">查询</button>
+                    </div>
+                    <div id="searchResult"></div>
+                </div>
             </div>
-        </header>
 
-        <section class="chat-container">
-            <div id="chatMessages">
-                <div class="message assistant">
-                    <div class="bubble">
-                        您好，我是智能售后助手。<br>您可以描述遇到的问题，也可以上传图片或视频文件。<br>系统将协助您分析问题并生成处理建议。
+            <div class="sidebar-footer">
+                <button id="backToWelcome" class="back-btn">返回首页</button>
+            </div>
+        </aside>
+
+        <main class="main">
+            <header class="header">
+                <div class="header-title">智能问题分析与工单协同</div>
+            </header>
+
+            <section class="chat-container">
+                <div id="chatMessages">
+                    <div class="message assistant">
+                        <div class="bubble">
+                            您好，我是智能售后助手。<br>
+                            您可以描述遇到的问题，或上传设备故障图片/视频。<br>
+                            系统将自动进行 OCR 识别、质保核验，并生成专业处理建议。
+                        </div>
                     </div>
                 </div>
-            </div>
-        </section>
+            </section>
 
-        <footer class="chat-footer">
-            <div class="input-wrapper">
-                <button id="fileLabel" class="upload-btn" type="button">+</button>
-                <input type="file" id="chatImage" hidden accept="image/*,video/mp4,video/quicktime" />
-                <textarea id="chatInput" rows="1" placeholder="请输入您的问题..."></textarea>
-                <button id="sendBtn" class="send-btn">↑</button>
-            </div>
-            <div id="filePreview"></div>
-        </footer>
-    </main>
-</div>
-
-<script src="user.js"></script>
+            <footer class="chat-footer">
+                <div class="input-wrapper">
+                    <button id="fileLabel" class="upload-btn" type="button" title="上传图片/视频">+</button>
+                    <input type="file" id="chatImage" hidden accept="image/*,video/mp4,video/quicktime" />
+                    <textarea id="chatInput" rows="1" placeholder="请描述您的设备故障或问题..."></textarea>
+                    <button id="sendBtn" class="send-btn" title="发送"><span class="icon-arrow"></span></button>
+                </div>
+                <div id="filePreview"></div>
+            </footer>
+        </main>
+    </div>
+    <script src="user.js"></script>
 </body>
 </html>

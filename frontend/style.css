@@ -4,101 +4,40 @@
     box-sizing: border-box;
 }
 
-/* ===================================================
-   全局核心设计语言变量声明 (完美匹配 welcome.html)
-   =================================================== */
 :root {
     --bg: #ffffff;
     --surface: #ffffff;
-    --sidebar: rgba(255, 255, 255, 0.65);
     --text: #0f172a;
     --sub: #64748b;
     --border: #e2e8f0;
     --primary: #2563eb;
     --primary-dark: #1d4ed8;
-    --primary-light: #4f46e5;
-    --hover: rgba(255, 255, 255, 0.5);
-    --shadow: 0 8px 32px rgba(15, 23, 42, 0.04);
+    --shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
 }
 
 body {
-    background: #ffffff;
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #f8fafc;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     color: var(--text);
-    padding: 24px;
-    max-width: 1400px;
-    margin: auto;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
 }
 
-/* 公共页面氛围渲染 */
-body::before {
-    content: '';
-    position: fixed;
-    top: -220px;
-    right: -220px;
-    width: 600px;
-    height: 600px;
-    background: radial-gradient(circle, rgba(37, 99, 235, 0.05) 0%, transparent 70%);
-    z-index: -3;
-    pointer-events: none;
+/* 统一滚动条样式 */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* 统一焦点状态 */
+input:focus, textarea:focus, button:focus-visible {
+    outline: none;
 }
 
-/* ===================================================
-   公共业务展示组件（保持对齐）
-   =================================================== */
-.feature-card {
-    background: rgba(255, 255, 255, 0.6);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 10px 18px;
-    font-size: 13px;
-    font-weight: 600;
-    color: #374151;
-    transition: .2s ease;
-}
-
-.feature-card:hover {
-    border-color: var(--primary);
-    color: var(--primary);
-    background: #ffffff;
-}
-
-/* 历史列表管理端容器 */
-.history-list {
-    max-height: 75vh;
-    overflow-y: auto;
-}
-
-/* 历史卡片升级为精致毛玻璃白面板 */
-.history-card {
-    background: rgba(255, 255, 255, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-radius: 20px;
-    padding: 18px;
-    margin-bottom: 14px;
-    box-shadow: var(--shadow);
-    transition: .3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.history-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
-    border-color: var(--border);
-}
-
-.history-card h4 {
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 10px;
-}
-
-.history-card p {
-    font-size: 13px;
-    color: var(--sub);
-    line-height: 1.6;
+/* 响应式基础适配 */
+@media (max-width: 768px) {
+    .admin-header { flex-direction: column; align-items: flex-start; }
+    .action-bar { width: 100%; flex-direction: column; }
+    .role-selector, .search-container { width: 100%; }
+    .card-meta { grid-template-columns: 1fr 1fr; }
 }

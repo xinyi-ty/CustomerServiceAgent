@@ -1,368 +1,296 @@
 # rag_simple.py
 """
-基于千问 Embedding + DeepSeek 的 RAG 检索增强生成模块
+RAG (检索增强生成) 核心模块 - 企业级生产版
 =======================================================================
 功能：
-    1. 读取指定目录下的所有 .txt 文件作为 SOP 知识库
-    2. 将长文本切分成小块，使用千问 text-embedding-v4 模型向量化
-    3. 将向量存入 ChromaDB 数据库，构建索引
-    4. 对用户问题，先检索最相关的知识块，再调用 DeepSeek 生成回答
-
-依赖环境变量（.env 文件）：
-    DASHSCOPE_API_KEY      # 阿里云千问 API 密钥
-    DEEPSEEK_API_KEY       # DeepSeek API 密钥
-    DEEPSEEK_BASE_URL      # DeepSeek API 地址（默认 https://api.deepseek.com/v1）
-
-使用方法：
-    from rag_simple import build_index, ask_sop
-    build_index(force_rebuild=True)   # 首次使用或知识库更新时调用
-    answer = ask_sop("你的问题")
+1. 自动读取 data/sop 目录下的 .txt 文件并进行智能分块。
+2. 使用多线程并发调用阿里云百炼 Embedding API 构建 ChromaDB 向量索引。
+3. 根据用户问题和工单标签，检索最相关的 SOP 片段。
+4. 结合系统 Prompt 调用大模型生成专业回复，并内置高危故障熔断机制。
 """
 
 import os
-import glob
+import re
+import time
+from typing import List, Dict, Any, Optional, Tuple
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import chromadb
-from dotenv import load_dotenv
-from langchain_text_splitters import RecursiveCharacterTextSplitter
 import dashscope
 from dashscope import TextEmbedding
 from openai import OpenAI
 
-# ========================= 1. 加载环境变量 =========================
-# 尝试多个可能的 .env 文件位置，确保无论从哪个目录运行都能找到
-possible_env_paths = [
-    os.path.join(os.path.dirname(__file__), '..', '.env'),  # 项目根目录
-    os.path.join(os.path.dirname(__file__), '.env'),  # backend 目录下
-    '.env'  # 当前工作目录
-]
-env_loaded = False
-for env_path in possible_env_paths:
-    if os.path.exists(env_path):
-        load_dotenv(dotenv_path=env_path, override=True)
-        print(f"已加载环境变量: {env_path}")
-        env_loaded = True
-        break
-if not env_loaded:
-    print("警告: 未找到 .env 文件，请确保在项目根目录或 backend 目录下创建 .env 文件")
+# ================= 1. 配置与初始化 =================
+try:
+    from config import (
+        CHROMA_PERSIST_DIRECTORY,
+        DASHSCOPE_API_KEY,
+        LLM_API_KEY,
+        LLM_BASE_URL,
+        LLM_MODEL_NAME
+    )
+except ImportError:
+    CHROMA_PERSIST_DIRECTORY = "./data/chroma_db"
+    DASHSCOPE_API_KEY = os.getenv("DASHSCOPE_API_KEY", "")
+    LLM_API_KEY = os.getenv("LLM_API_KEY", "sk-xxx")
+    LLM_BASE_URL = os.getenv("LLM_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+    LLM_MODEL_NAME = os.getenv("LLM_MODEL_NAME", "qwen-plus")
 
-# ========================= 2. 配置参数 =========================
-SOP_DIR = "data/sop"  # 存放 .txt 知识库文件的目录（相对路径）
-CHROMA_PERSIST_DIR = "./chroma_db"  # ChromaDB 持久化目录
-COLLECTION_NAME = "sop_knowledge"  # ChromaDB 集合名称
+# 核心常量
+SOP_DIR = "./data/sop"
+COLLECTION_NAME = "sop_knowledge"
+EMBEDDING_MODEL = "text-embedding-v2"
+CHUNK_SIZE = 600
+CHUNK_OVERLAP = 100
 
-CHUNK_SIZE = 500  # 文本分块大小（字符数）
-CHUNK_OVERLAP = 50  # 分块之间的重叠字符数，保持上下文连贯
-TOP_K = 3  # 检索时返回最相关的段落数量
+# 初始化 API Keys
+dashscope.api_key = DASHSCOPE_API_KEY
 
-EMBEDDING_MODEL = "text-embedding-v4"  # 千问 embedding 模型
-DEEPSEEK_MODEL = "Qwen/QwQ-32B"  # DeepSeek 对话模型
+# 初始化 ChromaDB 客户端
+chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIRECTORY)
 
-# ========================= 3. 全局客户端初始化 =========================
-_chroma_client = None  # ChromaDB 客户端（延迟初始化）
-_collection = None  # ChromaDB 集合（延迟初始化）
-_deepseek_client = None  # DeepSeek OpenAI 客户端（延迟初始化）
-
-# 设置千问 API Key
-qwen_api_key = os.getenv("DASHSCOPE_API_KEY")
-if qwen_api_key:
-    dashscope.api_key = qwen_api_key
-    print("已设置 dashscope.api_key")
-else:
-    print("错误: 未找到 DASHSCOPE_API_KEY 环境变量，请检查 .env 文件")
-
-# 检查 DeepSeek API Key（稍后在调用时还会检查一次）
-deepseek_api_key = os.getenv("DEEPSEEK_API_KEY")
-deepseek_base_url = os.getenv("DEEPSEEK_BASE_URL", "https://aigw-nmhhht.cucloud.cn/v1")
-if not deepseek_api_key:
-    print("错误: 未找到 DEEPSEEK_API_KEY 环境变量，请检查 .env 文件")
+# 初始化 LLM 客户端
+llm_client = OpenAI(api_key=LLM_API_KEY, base_url=LLM_BASE_URL)
 
 
-# ========================= 4. 辅助函数 =========================
+# ================= 2. 文本处理与向量化核心 =================
 
-def _get_chroma_collection():
-    """获取 ChromaDB 集合（如果不存在则自动创建）"""
-    global _chroma_client, _collection
-    if _chroma_client is None:
-        _chroma_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
-    if _collection is None:
-        _collection = _chroma_client.get_or_create_collection(name=COLLECTION_NAME)
-    return _collection
+def _chunk_text(text: str, chunk_size: int = CHUNK_SIZE, overlap: int = CHUNK_OVERLAP) -> List[str]:
+    """将长文本按固定窗口和重叠度切分为多个小块"""
+    if not text:
+        return []
+
+    chunks: List[str] = []
+    start = 0
+    text_len = len(text)
+
+    while start < text_len:
+        end = start + chunk_size
+        chunk = text[start:end]
+        chunks.append(chunk.strip())
+
+        if end >= text_len:
+            break
+
+        start += (chunk_size - overlap)
+
+    return chunks
 
 
-def _get_embedding(text: str):
-    """
-    调用千问 Embedding API，将单个文本转换为向量
-    :param text: 输入文本
-    :return: 浮点数列表（向量）
-    """
+def _get_embedding(text: str) -> List[float]:
+    """获取单条文本的向量 (用于用户查询时的实时向量化)"""
     if not dashscope.api_key:
-        raise RuntimeError("dashscope.api_key 未设置，请检查环境变量 DASHSCOPE_API_KEY")
+        raise RuntimeError("DashScope API Key 未设置。")
+
     resp = TextEmbedding.call(model=EMBEDDING_MODEL, input=text)
     if resp.status_code == 200:
         return resp.output["embeddings"][0]["embedding"]
     else:
-        raise RuntimeError(f"Embedding 失败: {resp.message}")
+        raise RuntimeError(f"单条 Embedding 失败: {resp.message}")
 
 
-def _get_embeddings_batch(texts: list):
-    """
-    批量获取向量（用于索引构建，减少 API 调用次数）
-    :param texts: 文本列表
-    :return: 向量列表，顺序与输入一致
-    """
+def _get_embeddings_batch(texts: List[str]) -> List[List[float]]:
+    """批量获取向量（多线程高并发优化版）"""
     if not dashscope.api_key:
-        raise RuntimeError("dashscope.api_key 未设置，请检查环境变量 DASHSCOPE_API_KEY")
-    resp = TextEmbedding.call(model=EMBEDDING_MODEL, input=texts)
-    if resp.status_code == 200:
-        embeds = [None] * len(texts)
-        for item in resp.output["embeddings"]:
-            embeds[item["text_index"]] = item["embedding"]
-        return embeds
-    else:
-        raise RuntimeError(f"批量 Embedding 失败: {resp.message}")
+        raise RuntimeError("DashScope API Key 未设置，无法进行向量化。")
 
+    BATCH_SIZE = 10
+    MAX_WORKERS = 5
 
-def _get_deepseek_client():
-    """获取 DeepSeek OpenAI 兼容客户端（单例模式）"""
-    global _deepseek_client
-    if _deepseek_client is None:
-        if not deepseek_api_key:
-            raise ValueError("请在 .env 中设置 DEEPSEEK_API_KEY")
-        _deepseek_client = OpenAI(api_key=deepseek_api_key, base_url=deepseek_base_url)
-    return _deepseek_client
+    batches: List[List[str]] = [texts[i: i + BATCH_SIZE] for i in range(0, len(texts), BATCH_SIZE)]
+    total_batches = len(batches)
+    all_embeddings: List[Optional[List[float]]] = [None] * len(texts)
 
+    print(f"[INFO] |-- 启动多线程并发向量化 (共 {total_batches} 批, 最大并发数 {MAX_WORKERS})")
 
-# ========================= 5. 索引构建 =========================
-
-def build_index(force_rebuild=False):
-    """
-    读取 SOP_DIR 下的所有 .txt 文件，切分、向量化后存入 ChromaDB
-    :param force_rebuild: 是否强制删除现有索引并重新构建
-    """
-    print("[build_index] 开始构建索引...")
-
-    # 如果需要强制重建，先删除整个集合
-    if force_rebuild:
-        tmp_client = chromadb.PersistentClient(path=CHROMA_PERSIST_DIR)
+    def fetch_batch(batch_idx: int, batch_texts: List[str]) -> Tuple[int, List[Dict[str, Any]]]:
         try:
-            tmp_client.delete_collection(COLLECTION_NAME)
-            print(f"已删除旧集合 {COLLECTION_NAME}")
+            resp = TextEmbedding.call(model=EMBEDDING_MODEL, input=batch_texts)
+            if resp.status_code == 200:
+                return batch_idx, resp.output["embeddings"]
+            else:
+                raise RuntimeError(f"API 返回错误: {resp.message}")
         except Exception as e:
-            print(f"删除集合时出错（可能是集合不存在）: {e}")
-        # 重置全局变量，让下一次 _get_chroma_collection 重新创建集合
-        global _collection, _chroma_client
-        _collection = None
-        _chroma_client = None
+            print(f"[ERROR] 批次 {batch_idx + 1} 请求失败: {e}")
+            raise e
 
-    # 获取集合（如果不存在则自动创建）
-    collection = _get_chroma_collection()
+    with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
+        future_to_idx = {
+            executor.submit(fetch_batch, idx, batch): idx
+            for idx, batch in enumerate(batches)
+        }
 
-    # 获取所有 .txt 文件路径
-    txt_dir = os.path.join(os.path.dirname(__file__), SOP_DIR)
-    if not os.path.exists(txt_dir):
-        print(f"目录不存在: {txt_dir}，请先创建并放入 .txt 文件")
+        for future in as_completed(future_to_idx):
+            batch_idx, embeddings_data = future.result()
+            offset = batch_idx * BATCH_SIZE
+
+            for item in embeddings_data:
+                global_index = offset + item["text_index"]
+                all_embeddings[global_index] = item["embedding"]
+
+            print(f"[INFO] |-- 批次 {batch_idx + 1}/{total_batches} 处理完成 ({len(batches[batch_idx])} items)")
+
+    return [emb for emb in all_embeddings if emb is not None]
+
+
+# ================= 3. 索引构建 =================
+
+def build_index(force_rebuild: bool = False) -> None:
+    """读取 data/sop 目录下的文件，构建或更新 ChromaDB 向量索引"""
+    print("\n" + "=" * 60)
+    print("[INFO] RAG Engine: 开始构建知识库向量索引")
+    print("=" * 60)
+
+    if not os.path.exists(SOP_DIR):
+        print(f"[ERROR] 未找到知识库目录: {SOP_DIR}")
         return
 
-    file_paths = glob.glob(os.path.join(txt_dir, "*.txt"))
-    if not file_paths:
-        print(f"在 {txt_dir} 下未找到任何 .txt 文件")
-        return
+    if force_rebuild:
+        try:
+            existing_collections = [col.name for col in chroma_client.list_collections()]
+            if COLLECTION_NAME in existing_collections:
+                chroma_client.delete_collection(COLLECTION_NAME)
+                print(f"[INFO] 已清理历史集合: {COLLECTION_NAME}")
+            else:
+                print(f"[INFO] 集合 {COLLECTION_NAME} 尚未创建，跳过清理。")
+        except Exception as e:
+            print(f"[WARN] 清理旧集合时出现异常 (不影响后续构建): {e}")
 
-    # 读取所有文件内容
-    raw_docs = []
-    for path in file_paths:
-        with open(path, 'r', encoding='utf-8') as f:
-            content = f.read()
-            if content.strip():
-                raw_docs.append(content)
-                print(f"已读取: {path} ({len(content)} 字符)")
-
-    # 文本分块
-    splitter = RecursiveCharacterTextSplitter(
-        chunk_size=CHUNK_SIZE,
-        chunk_overlap=CHUNK_OVERLAP,
-        separators=["\n\n", "\n", "。", "！", "？", "；", " ", ""]
+    collection = chroma_client.get_or_create_collection(
+        name=COLLECTION_NAME,
+        metadata={"hnsw:space": "cosine"}
     )
-    all_chunks = []
-    for doc in raw_docs:
-        chunks = splitter.split_text(doc)
-        all_chunks.extend(chunks)
-        print(f"  切分为 {len(chunks)} 块")
+
+    all_chunks: List[str] = []
+    all_metadatas: List[Dict[str, str]] = []
+    all_ids: List[str] = []
+
+    txt_files = [f for f in os.listdir(SOP_DIR) if f.endswith('.txt')]
+    if not txt_files:
+        print(f"[WARN] {SOP_DIR} 目录下未发现 .txt 文件。")
+        return
+
+    for filename in txt_files:
+        filepath = os.path.join(SOP_DIR, filename)
+        with open(filepath, 'r', encoding='utf-8') as f:
+            content = f.read()
+            print(f"[INFO] |-- 读取文档: {filename} ({len(content)} chars)")
+
+            chunks = _chunk_text(content)
+            for i, chunk in enumerate(chunks):
+                chunk_id = f"{filename}_chunk_{i}"
+                all_ids.append(chunk_id)
+                all_chunks.append(chunk)
+                all_metadatas.append({"source": filename, "chunk_index": str(i)})
 
     if not all_chunks:
-        print("没有文本块可索引")
+        print("[WARN] 未提取到任何有效文本块。")
         return
 
-    # 生成唯一 ID
-    ids = [f"chunk_{i}" for i in range(len(all_chunks))]
-
-    # 批量向量化
-    print(f"正在计算 {len(all_chunks)} 个文本块的向量（调用千问 API）...")
+    print(f"[INFO] 正在计算 {len(all_chunks)} 个文本块的向量 (Batch API)...")
     embeddings = _get_embeddings_batch(all_chunks)
-    # 过滤空文本和无效 embedding
-    filtered_chunks = []
-    filtered_embeddings = []
-    filtered_ids = []
-    for i, (chunk, emb) in enumerate(zip(all_chunks, embeddings)):
-        if chunk and chunk.strip() and emb is not None:
-            filtered_chunks.append(chunk)
-            filtered_embeddings.append(emb)
-            filtered_ids.append(f"chunk_{i}")
 
-    if not filtered_chunks:
-        print("没有有效的文本块和向量可存入索引")
-        return
-
-    # 存入 ChromaDB
     collection.add(
-        ids=filtered_ids,
-        documents=filtered_chunks,
-        embeddings=filtered_embeddings
+        ids=all_ids,
+        embeddings=embeddings,
+        documents=all_chunks,
+        metadatas=all_metadatas
     )
-    print(f"索引构建完成，共 {len(filtered_chunks)} 个片段")
 
-   
-
+    print(f"[SUCCESS] 索引构建完成，共入库 {len(all_ids)} 个知识片段。")
 
 
-# ========================= 6. 检索 =========================
+# ================= 4. RAG 检索与生成 =================
 
-def retrieve(query: str, top_k: int = TOP_K):
-    """
-    根据用户问题，从向量库中检索最相关的 SOP 段落
-    :param query: 用户输入的问题
-    :param top_k: 返回的结果数量
-    :return: 列表，每个元素为字典，包含 content、id、distance
-    """
-    collection = _get_chroma_collection()
-    # 将问题转为向量
-    query_vec = _get_embedding(query)
-    # 在 ChromaDB 中查询最相似的 top_k 个文档
-    results = collection.query(
-        query_embeddings=[query_vec],
-        n_results=top_k
-    )
-    retrieved = []
-    if results['documents'] and results['documents'][0]:
-        for i, doc in enumerate(results['documents'][0]):
-            retrieved.append({
-                "content": doc,
-                "id": results['ids'][0][i],
-                "distance": results['distances'][0][i] if results['distances'] else None
-            })
-    return retrieved
+def get_sop_guide(
+        issue_category: str,
+        urgency_level: str,
+        user_message: str
+) -> str:
+    """核心 RAG 接口：根据用户问题和标签，检索 SOP 并生成回复"""
+    query_text = f"故障类别: {issue_category}, 紧急程度: {urgency_level}。用户描述: {user_message}"
 
-
-# ========================= 7. 生成回答 =========================
-
-def generate_answer(question: str, retrieved_chunks: list) -> str:
-    """
-    基于检索到的知识块，调用 DeepSeek 生成最终回答
-    :param question: 原始用户问题
-    :param retrieved_chunks: retrieve 函数返回的列表
-    :return: 回答字符串
-    """
-    if not retrieved_chunks:
-        context = "未找到相关的 SOP 知识。"
-    else:
-        # 将多个段落用换行分隔，作为上下文
-        context = "\n\n".join([chunk["content"] for chunk in retrieved_chunks])
-
-    system_prompt = """你是一个专业的客服助手。请严格依据下方提供的【参考知识】回答用户的问题。
-如果参考知识中包含具体的处置步骤或话术，请直接采用。
-如果参考知识不足以回答问题，请如实告知用户并建议联系人工客服。
-不要编造不存在的信息。"""
-
-    user_prompt = f"""【参考知识】
-{context}
-
-【用户问题】
-{question}
-
-请基于参考知识，给出准确、有用的回复。"""
-
-    client = _get_deepseek_client()
-    response = client.chat.completions.create(
-        model=DEEPSEEK_MODEL,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt}
-        ],
-        temperature=0.1,  # 低温度让回答更保守、更基于事实
-        max_tokens=500
-    )
-    return response.choices[0].message.content or "抱歉，未能生成回答，请稍后再试。"
-
-# ========================= 8. 统一入口 =========================
-
-def ask_sop(question: str) -> str:
-    """
-    主入口函数：输入用户问题，输出基于 SOP 知识库的回复
-    内部自动完成 检索 -> 生成 的全流程
-    :param question: 用户问题（字符串）
-    :return: 回答（字符串）
-    """
-    chunks = retrieve(question)
-    answer = generate_answer(question, chunks)
-    return answer
-
-# ========================= 9. 适配 main.py 的接口 =========================
-
-def get_sop_guide(issue_category: str, urgency_level: str) -> str:
-    """
-    适配 main.py 的接口：根据问题类别和紧急度返回 SOP 指导
-    
-    Args:
-        issue_category: 问题类别（如 "Missing_Part", "Overheating"）
-        urgency_level: 紧急度（"Low", "Medium", "High"）
-    
-    Returns:
-        SOP 指导文本
-    """
-    # 构建查询问题
-    query = f"{issue_category} {urgency_level}"
-    
-    # 高紧急度快速响应
-    if urgency_level == "High":
-        high_priority_response = "【紧急处置】请立即切断设备电源，远离现场，等待专业人员处理。"
-        try:
-            detailed = ask_sop(f"{issue_category} 紧急处置")
-            if detailed and len(detailed) > 10 and "未找到" not in detailed:
-                return f"{high_priority_response}\n\n详细处置:\n{detailed}"
-        except:
-            pass
-        return high_priority_response
-    
-    # 正常检索
     try:
-        answer = ask_sop(query)
-        # 如果返回的是错误信息，返回默认值
-        if "未找到" in answer or len(answer) < 5:
-            return f"【处理方案】您的 {issue_category} 问题已收到，技术人员将尽快与您联系。"
-        return answer
+        query_embedding = _get_embedding(query_text)
     except Exception as e:
-        print(f"SOP 检索失败: {e}")
-        return f"【处理方案】您的 {issue_category} 问题已收到，技术人员将尽快与您联系。"
+        return f"[ERROR] 检索向量化失败: {e}"
 
+    collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
 
-# ========================= 10. 测试代码 =========================
-if __name__ == "__main__":
-    # 首次运行需要构建索引
-    print("=" * 50)
-    print("RAG 模块测试")
-    print("=" * 50)
-    
-    # 构建索引（首次运行或知识库更新时执行）
-    build_index(force_rebuild=True)
-    
-    # 测试检索
-    test_questions = [
-        "Missing_Part Low",
-        "Overheating High",
-        "设备冒烟怎么办？"
-    ]
-    
-    for q in test_questions:
-        print(f"\n问题: {q}")
-        answer = ask_sop(q)
-        print(f"回答: {answer}")
+    results = collection.query(
+        query_embeddings=[query_embedding],
+        n_results=3,
+        include=["documents", "metadatas"]
+    )
+
+    context_text = ""
+    if results and results['documents'] and results['documents'][0]:
+        for i, doc in enumerate(results['documents'][0]):
+            source = results['metadatas'][0][i].get('source', 'Unknown')
+            context_text += f"\n[参考片段 {i + 1} (来源: {source})]:\n{doc}\n"
+    else:
+        context_text = "未在知识库中找到直接相关的 SOP 记录。"
+
+    system_prompt = """你是一个专业的智能售后客服助手。请严格基于以下提供的 [SOP 知识库片段] 来回答用户的问题。
+
+【核心回复原则】：
+1. 必须完全基于提供的 SOP 片段回答，禁止编造 SOP 中没有的技术参数或承诺。
+2. 语气要专业、同理心强、条理清晰。
+3. 如果 SOP 中没有相关信息，请明确告知用户需要转交人工工程师，并安抚情绪。
+"""
+
+    if urgency_level.strip().lower() == "high":
+        system_prompt += "\n\n[紧急处置协议]：检测到高危故障（如冒烟、起火、漏电等）！你的回复**第一句话必须是**：\n'[紧急处置] 请立即切断设备电源，远离设备至少2米，确保人身安全！'\n然后再提供 SOP 中的后续上报流程。"
+
+    user_prompt = f"""
+[SOP 知识库片段]:
+{context_text}
+
+[用户当前问题]:
+{user_message}
+
+请根据上述 SOP 片段，给出专业、准确的指导回复：
+"""
+
+    # 调用 LLM (带限流自动重试与思考标签深度清洗)
+    max_retries = 3
+
+    for attempt in range(max_retries):
+        try:
+            response = llm_client.chat.completions.create(
+                model=LLM_MODEL_NAME,
+                messages=[
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
+                ],
+                temperature=0.3,
+                max_tokens=1024
+            )
+            sop_response = response.choices[0].message.content
+
+            # [核心修复] 深度清洗 QwQ 等推理模型的思考过程
+            # 痛点：API 网关有时会吞掉开头的 <think>，只保留结尾的 </think>
+            # 方案：直接以 </think> 为界，截取其后的最终回复
+            if '</think>' in sop_response:
+                sop_response = sop_response.split('</think>')[-1].strip()
+            else:
+                # 兜底：尝试正则匹配完整的 <think>...</think> (以防万一)
+                sop_response = re.sub(r'(?s).*?</think>', '', sop_response).strip()
+
+            # 极端情况兜底：如果清洗后为空，说明模型全在思考没输出结果
+            if not sop_response:
+                sop_response = "[系统提示] 模型正在深度推理中，请稍后重新发起请求。"
+
+            return sop_response
+
+        except Exception as e:
+            error_msg = str(e).lower()
+            if "rate limit" in error_msg and attempt < max_retries - 1:
+                # [优化] 延长重试等待时间，适配严格的 API 网关冷却机制
+                wait_time = 10 * (attempt + 1)  # 递增等待：10s, 20s
+                print(f"[WARN] 触发 LLM API 限流 (Rate Limit)，{wait_time}s 后重试 ({attempt + 1}/{max_retries})...")
+                time.sleep(wait_time)
+            else:
+                return f"[ERROR] LLM 生成回复失败: {e}"
+
+    return "[ERROR] LLM 生成回复失败：超过最大重试次数。"

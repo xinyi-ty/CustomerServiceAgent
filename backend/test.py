@@ -73,33 +73,99 @@ from openai import OpenAI
 
 
 # test_role_history.py
-import requests
-import json
+# import requests
+# import json
+#
+# BASE_URL = "http://localhost:8000"
+#
+# def test_role(role_name, role_param):
+#     url = f"{BASE_URL}/history"
+#     if role_param:
+#         url += f"?role={role_param}"
+#     print(f"\n=== 测试角色: {role_name} (参数: {role_param if role_param else '无'}) ===")
+#     try:
+#         resp = requests.get(url)
+#         resp.raise_for_status()
+#         data = resp.json()
+#         tickets = data.get("tickets", [])
+#         print(f"共获取 {len(tickets)} 个工单")
+#         for i, t in enumerate(tickets[:5]):  # 只显示前5个
+#             urgency = t.get("agent_business_assessment", {}).get("urgency_level", "未知")
+#             category = t.get("agent_business_assessment", {}).get("issue_category", "未知")
+#             print(f"  {i+1}. ID: {t.get('ticket_id')} | 紧急度: {urgency} | 类别: {category}")
+#         if len(tickets) > 5:
+#             print(f"  ... 还有 {len(tickets)-5} 个工单未显示")
+#     except Exception as e:
+#         print(f"请求失败: {e}")
+#
+# if __name__ == "__main__":
+#     test_role("全部（无角色）", None)
+#     test_role("一线员工 (frontline)", "frontline")
+#     test_role("部门经理 (manager)", "manager")
+#     test_role("总经理 (general)", "general")
+# backend/test_erp_mock.py
+"""
+ERP Mock Server 自动化测试脚本
+用于验证鉴权、正常查询、404、500错误以及超时降级机制
+"""
+import asyncio
+import httpx
+import time
 
-BASE_URL = "http://localhost:8000"
+# 配置 (请确保与您的 warranty.py 和 mock_erp_server.py 保持一致)
+ERP_BASE_URL = "http://127.0.0.1:8001"
+MOCK_API_KEY = "mock_secret_token_123"
+HEADERS = {"Authorization": f"Bearer {MOCK_API_KEY}"}
 
-def test_role(role_name, role_param):
-    url = f"{BASE_URL}/history"
-    if role_param:
-        url += f"?role={role_param}"
-    print(f"\n=== 测试角色: {role_name} (参数: {role_param if role_param else '无'}) ===")
-    try:
-        resp = requests.get(url)
-        resp.raise_for_status()
-        data = resp.json()
-        tickets = data.get("tickets", [])
-        print(f"共获取 {len(tickets)} 个工单")
-        for i, t in enumerate(tickets[:5]):  # 只显示前5个
-            urgency = t.get("agent_business_assessment", {}).get("urgency_level", "未知")
-            category = t.get("agent_business_assessment", {}).get("issue_category", "未知")
-            print(f"  {i+1}. ID: {t.get('ticket_id')} | 紧急度: {urgency} | 类别: {category}")
-        if len(tickets) > 5:
-            print(f"  ... 还有 {len(tickets)-5} 个工单未显示")
-    except Exception as e:
-        print(f"请求失败: {e}")
+# 测试用例定义
+TEST_CASES = [
+    {"name": "✅ 正常在保设备", "sn": "SN202501001", "expect_status": 200},
+    {"name": "⚠️ 已过保设备", "sn": "SN202005002", "expect_status": 200},
+    {"name": "❌ 查无此机 (404)", "sn": "SN999999999", "expect_status": 404},
+    {"name": "❌ 错误 Token (401)", "sn": "SN202501001", "expect_status": 401, "bad_token": True},
+    {"name": "💥 ERP 内部崩溃 (500)", "sn": "SN_ERROR", "expect_status": 500},
+    {"name": "⏳ 模拟超时 (触发 httpx Timeout)", "sn": "SN_TIMEOUT", "expect_status": "timeout"},
+]
+
+
+async def run_tests():
+    print("🚀 开始执行 ERP Mock Server 自动化测试...\n")
+
+    # 设置 5 秒超时，模拟主系统的 httpx 超时配置
+    async with httpx.AsyncClient(base_url=ERP_BASE_URL, timeout=5.0) as client:
+        for case in TEST_CASES:
+            print(f"👉 测试用例: {case['name']} (SN: {case['sn']})")
+
+            headers = {"Authorization": "Bearer wrong_token"} if case.get("bad_token") else HEADERS
+
+            start_time = time.time()
+            try:
+                response = await client.get(f"/warranty/{case['sn']}", headers=headers)
+                elapsed = time.time() - start_time
+
+                if case["expect_status"] == "timeout":
+                    print(f"   ❌ 失败: 预期超时，但收到了 {response.status_code} ({elapsed:.2f}s)\n")
+                elif response.status_code == case["expect_status"]:
+                    print(f"   ✅ 通过: 收到预期的 {response.status_code} ({elapsed:.2f}s)")
+                    if response.status_code == 200:
+                        print(f"      数据: {response.json()}\n")
+                    else:
+                        print(f"      错误信息: {response.text}\n")
+                else:
+                    print(f"   ❌ 失败: 预期 {case['expect_status']}，实际 {response.status_code} ({elapsed:.2f}s)\n")
+
+            except httpx.TimeoutException:
+                elapsed = time.time() - start_time
+                if case["expect_status"] == "timeout":
+                    print(f"   ✅ 通过: 成功触发 httpx.TimeoutException ({elapsed:.2f}s)\n")
+                else:
+                    print(f"   ❌ 失败: 意外发生超时 ({elapsed:.2f}s)\n")
+            except httpx.ConnectError:
+                print("   🛑 致命错误: 无法连接到 Mock Server，请先运行 `python mock_erp_server.py`！\n")
+                break
+            except Exception as e:
+                print(f"   ❌ 发生未知异常: {e}\n")
+
 
 if __name__ == "__main__":
-    test_role("全部（无角色）", None)
-    test_role("一线员工 (frontline)", "frontline")
-    test_role("部门经理 (manager)", "manager")
-    test_role("总经理 (general)", "general")
+    asyncio.run(run_tests())
