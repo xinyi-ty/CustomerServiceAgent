@@ -3,52 +3,283 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理者看板 - 华工之光客诉系统</title>
+    <title>管理者看板 - 智能客诉系统</title>
     <link rel="stylesheet" href="style.css">
     <style>
+        /* 管理界面专属样式（基于通用风格微调） */
+        .admin-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+
         .admin-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 28px;
+            flex-wrap: wrap;
+            gap: 16px;
         }
-        .refresh-btn {
-            background: #2563eb;
+
+        .logo-area {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .logo-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             color: white;
+            font-size: 18px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            box-shadow: 0 6px 14px rgba(59,130,246,0.25);
+        }
+
+        .admin-header h2 {
+            font-size: 1.6rem;
+            font-weight: 600;
+            color: #1e2a3e;
+            margin: 0;
+        }
+
+        .action-bar {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .role-selector {
+            display: flex;
+            gap: 8px;
+            background: #ffffff;
+            padding: 4px;
+            border-radius: 48px;
+            border: 1px solid #e2edf7;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .role-btn {
+            background: transparent;
             border: none;
-            border-radius: 30px;
             padding: 8px 20px;
-            cursor: pointer;
+            border-radius: 40px;
             font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: #5c6f87;
         }
-        .history-list {
-            max-height: 70vh;
-            overflow-y: auto;
+
+        .role-btn.active {
+            background: #3b82f6;
+            color: white;
+            box-shadow: 0 2px 6px rgba(59,130,246,0.2);
         }
-        .history-card {
+
+        .search-container {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            background: white;
+            border: 1px solid #e2edf7;
+            border-radius: 48px;
+            padding: 4px 6px 4px 16px;
+            transition: 0.2s;
+        }
+
+        .search-container:focus-within {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+        }
+
+        .search-input {
+            border: none;
+            outline: none;
+            font-size: 14px;
+            padding: 8px 0;
+            width: 180px;
+            background: transparent;
+        }
+
+        .search-btn {
+            background: #3b82f6;
+            border: none;
+            border-radius: 40px;
+            padding: 6px 18px;
+            color: white;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .search-btn:hover {
+            background: #2563eb;
+        }
+
+        .action-btn {
+            background: #ffffff;
+            border: 1px solid #e2edf7;
+            border-radius: 40px;
+            padding: 8px 20px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #1e2a3e;
+        }
+
+        .action-btn:hover {
             background: #f8fafc;
-            border-radius: 16px;
-            padding: 12px 16px;
+            border-color: #cbd5e1;
+        }
+
+        .ticket-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .history-card {
+            background: white;
+            border-radius: 24px;
+            padding: 18px 22px;
+            border: 1px solid #eef2f8;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+            transition: all 0.2s;
+        }
+
+        .history-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+            border-color: #e0e8f0;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             margin-bottom: 12px;
-            border-left: 4px solid #2563eb;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .ticket-id {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e2a3e;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 30px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-未处理 {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .status-已处理 {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .card-details {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 14px;
+            font-size: 13px;
+            color: #5c6f87;
+        }
+
+        .card-details span {
+            color: #1e2a3e;
+            font-weight: 500;
+        }
+
+        .reply-preview {
+            font-size: 13px;
+            color: #5c6f87;
+            background: #f8fafc;
+            padding: 10px 14px;
+            border-radius: 16px;
+            margin: 12px 0;
+            border-left: 3px solid #3b82f6;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 12px;
+        }
+
+        .process-btn {
+            background: #f97316;
+            border: none;
+            border-radius: 32px;
+            padding: 6px 20px;
+            color: white;
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .process-btn:hover {
+            background: #ea580c;
+            transform: translateY(-1px);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 32px;
+            border: 1px solid #eef2f8;
         }
     </style>
 </head>
 <body>
-
-<div class="admin-header">
-    <div class="logo" style="width: 48px; height: 48px; background: #2563eb; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white;">📊</div>
-    <h2>管理者看板 - 历史工单记录</h2>
-    <div>
-        <button id="refreshBtn" class="refresh-btn">🔄 刷新</button>
-        <button id="backToWelcome" style="background: #e2e8f0; border: none; border-radius: 30px; padding: 8px 20px; margin-left: 10px; cursor: pointer;">🏠 返回首页</button>
+<div class="admin-container">
+    <div class="admin-header">
+        <div class="logo-area">
+            <div class="logo-icon">AI</div>
+            <h2>工单管理看板</h2>
+        </div>
+        <div class="action-bar">
+            <div class="role-selector">
+                <button class="role-btn" data-role="frontline">一线员工</button>
+                <button class="role-btn" data-role="manager">部门经理</button>
+                <button class="role-btn" data-role="general">总经理</button>
+            </div>
+            <div class="search-container">
+                <input type="text" id="searchTicketId" class="search-input" placeholder="工单号">
+                <button id="searchBtn" class="search-btn">搜索</button>
+            </div>
+            <button id="refreshBtn" class="action-btn">刷新</button>
+            <button id="backToWelcome" class="action-btn">返回</button>
+        </div>
     </div>
-</div>
 
-<div class="card">
-    <div id="historyContainer" class="history-list">
-        <div class="history-icon">📋</div>
-        <h3>加载中...</h3>
+    <div id="historyContainer" class="ticket-grid">
+        <div class="empty-state">
+            <div style="font-size: 48px; margin-bottom: 12px; color: #cbd5e1;">—</div>
+            <h3>暂无工单</h3>
+            <p style="color: #5c6f87;">当前角色暂无工单记录</p>
+        </div>
     </div>
 </div>
 

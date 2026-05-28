@@ -8,6 +8,16 @@ const filePreview = document.getElementById('filePreview');
 const newChatBtn = document.getElementById('newChatBtn');
 const backBtn = document.getElementById('backToWelcome');
 
+// 工单查询相关元素
+const userSearchInput = document.getElementById('userSearchTicket');
+const userSearchBtn = document.getElementById('userSearchBtn');
+const searchResultDiv = document.getElementById('searchResult');
+
+// 折叠相关元素
+const collapseHeader = document.getElementById('collapseHeader');
+const collapseContent = document.getElementById('collapseContent');
+const collapseIcon = document.getElementById('collapseIcon');
+
 // ======================== 状态管理 ========================
 let sessionId = localStorage.getItem('chat_session_id');
 if (!sessionId) {
@@ -33,11 +43,6 @@ function escapeHtml(str) {
     });
 }
 
-/**
- * 解析回复中的思考链
- * @param {string} rawText - 包含可能 <think>...</think> 的文本
- * @returns {object} { thinking: string|null, reply: string }
- */
 function parseThinkingReply(rawText) {
     const thinkRegex = /<think>([\s\S]*?)<\/think>/;
     const match = rawText.match(thinkRegex);
@@ -49,7 +54,6 @@ function parseThinkingReply(rawText) {
     return { thinking: null, reply: rawText };
 }
 
-// 普通添加消息（用户消息或简单提示）
 function addMessage(role, content, extra = {}) {
     const messageDiv = document.createElement('div');
     messageDiv.className = `message ${role}`;
@@ -64,14 +68,11 @@ function addMessage(role, content, extra = {}) {
     return messageDiv;
 }
 
-// 带思考链的助手消息（折叠思考块 + 最终回复可打字）
 function addAssistantMessageWithThinking(fullRawText, extra = {}) {
     const { thinking, reply } = parseThinkingReply(fullRawText);
     const messageDiv = document.createElement('div');
     messageDiv.className = 'message assistant';
-
     let bubbleHtml = `<div class="bubble">`;
-    // 如果有思考内容，添加折叠块
     if (thinking) {
         bubbleHtml += `
             <div class="think-container">
@@ -80,8 +81,7 @@ function addAssistantMessageWithThinking(fullRawText, extra = {}) {
             </div>
         `;
     }
-    // 最终回复容器（用于打字机效果）
-    bubbleHtml += `<div class="reply-content"></div>`;
+    bubbleHtml += `<div class="reply-content">${escapeHtml(reply)}</div>`;
     if (extra.ticket_id) {
         bubbleHtml += `<span class="ticket-badge">工单: ${extra.ticket_id}</span>`;
     }
@@ -89,17 +89,15 @@ function addAssistantMessageWithThinking(fullRawText, extra = {}) {
     messageDiv.innerHTML = bubbleHtml;
     chatMessages.appendChild(messageDiv);
 
-    // 绑定折叠事件
     const thinkContainer = messageDiv.querySelector('.think-container');
     if (thinkContainer) {
         const summary = thinkContainer.querySelector('.think-summary');
-        const content = thinkContainer.querySelector('.think-content');
+        const contentDiv = thinkContainer.querySelector('.think-content');
         summary.addEventListener('click', () => {
-            const isHidden = content.style.display === 'none';
-            content.style.display = isHidden ? 'block' : 'none';
+            const isHidden = contentDiv.style.display === 'none';
+            contentDiv.style.display = isHidden ? 'block' : 'none';
             summary.innerHTML = isHidden ? '🤔 思考过程 ▼' : '🤔 思考过程 ▶';
         });
-        // 初始状态为折叠
         summary.innerHTML = '🤔 思考过程 ▶';
     }
 
@@ -107,11 +105,10 @@ function addAssistantMessageWithThinking(fullRawText, extra = {}) {
     return { messageDiv, replyText: reply };
 }
 
-// 打字机效果：将文本逐字输出到指定的 .reply-content 容器
 async function typeTextToReplyContainer(messageDiv, text, speed = 20) {
     const replyContainer = messageDiv.querySelector('.reply-content');
     if (!replyContainer) return;
-    replyContainer.innerHTML = ''; // 清空
+    replyContainer.innerHTML = '';
     for (let i = 0; i < text.length; i++) {
         if (!isStreaming) break;
         replyContainer.innerHTML += escapeHtml(text[i]);
@@ -120,7 +117,6 @@ async function typeTextToReplyContainer(messageDiv, text, speed = 20) {
     }
 }
 
-// 显示思考指示器（三点动画）
 function showThinkingIndicator() {
     const thinkingDiv = document.createElement('div');
     thinkingDiv.className = 'message assistant';
@@ -130,10 +126,121 @@ function showThinkingIndicator() {
     chatMessages.scrollTop = chatMessages.scrollHeight;
     return thinkingDiv;
 }
-
 function hideThinkingIndicator() {
     const indicator = document.getElementById('thinkingIndicator');
     if (indicator) indicator.remove();
+}
+
+function attachTicketPreviewCard(messageDiv, previewData, previewId) {
+    const bubble = messageDiv.querySelector('.bubble');
+    if (!bubble) return;
+    if (bubble.querySelector('.ticket-preview-card')) return;
+    const card = document.createElement('div');
+    card.className = 'ticket-preview-card';
+    card.innerHTML = `
+        <h4>📋 工单预览</h4>
+        <div class="field"><strong>紧急度</strong> ${escapeHtml(previewData.urgency_level || '未知')}</div>
+        <div class="field"><strong>问题类别</strong> ${escapeHtml(previewData.category || '未分类')}</div>
+        <div class="field"><strong>提取信息</strong> <pre style="display:inline; font-size:12px;">${escapeHtml(JSON.stringify(previewData.extracted_data || {}, null, 2))}</pre></div>
+        <div class="preview-buttons">
+            <button class="cancel-create">取消</button>
+            <button class="confirm-create">✅ 创建工单</button>
+        </div>
+    `;
+    bubble.appendChild(card);
+
+    card.querySelector('.cancel-create').addEventListener('click', () => {
+        card.remove();
+    });
+    card.querySelector('.confirm-create').addEventListener('click', async () => {
+        const confirmBtn = card.querySelector('.confirm-create');
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = '创建中...';
+        try {
+            const formData = new FormData();
+            formData.append('preview_id', previewId);
+            formData.append('session_id', sessionId);
+            const res = await fetch('http://localhost:8000/chat/create_ticket', {
+                method: 'POST',
+                body: formData
+            });
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const data = await res.json();
+            addMessage('assistant', `✅ 工单已创建，编号：${data.ticket_id}`, { ticket_id: data.ticket_id });
+            card.remove();
+        } catch (err) {
+            console.error(err);
+            addMessage('assistant', '❌ 创建工单失败，请稍后重试');
+            confirmBtn.disabled = false;
+            confirmBtn.textContent = '✅ 创建工单';
+        }
+    });
+}
+
+// 工单查询功能
+async function searchUserTicket() {
+    const ticketId = userSearchInput.value.trim();
+    if (!ticketId) {
+        searchResultDiv.innerHTML = '<span style="color: #ef4444;">请输入工单号</span>';
+        return;
+    }
+    searchResultDiv.innerHTML = '查询中...';
+    try {
+        const res = await fetch(`http://localhost:8000/history?ticket_id=${encodeURIComponent(ticketId)}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const tickets = data.tickets || [];
+        if (tickets.length === 0) {
+            searchResultDiv.innerHTML = '<span style="color: #f97316;">未找到工单，请核对工单号</span>';
+        } else {
+            let html = '';
+            for (const t of tickets) {
+                const urgency = t.agent_business_assessment?.urgency_level || '未知';
+                const status = t.status || '未处理';
+                const category = t.agent_business_assessment?.issue_category || '无分类';
+                const createdAt = t.created_at || '未知时间';
+                const replyPreview = (t.auto_reply_sent || '').substring(0, 150);
+                html += `
+                    <div style="background: #f1f5f9; border-radius: 16px; padding: 12px; margin-top: 12px; border-left: 4px solid #2563eb;">
+                        <p><strong>工单号：</strong>${escapeHtml(t.ticket_id)}</p>
+                        <p><strong>紧急度：</strong>${escapeHtml(urgency)} &nbsp;|&nbsp; <strong>类别：</strong>${escapeHtml(category)}</p>
+                        <p><strong>状态：</strong>${escapeHtml(status)}</p>
+                        <p><strong>创建时间：</strong>${escapeHtml(createdAt)}</p>
+                        <details><summary style="cursor: pointer; color: #2563eb;">查看AI回复</summary><p style="white-space: pre-wrap; margin-top: 8px;">${escapeHtml(replyPreview)}</p></details>
+                    </div>
+                `;
+            }
+            searchResultDiv.innerHTML = html;
+        }
+    } catch (err) {
+        console.error(err);
+        searchResultDiv.innerHTML = '<span style="color: #ef4444;">查询失败，请稍后重试</span>';
+    }
+}
+
+// ======================== 折叠功能 ========================
+function initCollapse() {
+    if (!collapseHeader || !collapseContent || !collapseIcon) return;
+    const isCollapsed = localStorage.getItem('ticketSearchCollapsed') === 'true';
+    if (isCollapsed) {
+        collapseContent.classList.add('collapsed');
+        collapseIcon.classList.add('collapsed');
+    } else {
+        collapseContent.classList.remove('collapsed');
+        collapseIcon.classList.remove('collapsed');
+    }
+    collapseHeader.addEventListener('click', () => {
+        const nowCollapsed = collapseContent.classList.contains('collapsed');
+        if (nowCollapsed) {
+            collapseContent.classList.remove('collapsed');
+            collapseIcon.classList.remove('collapsed');
+            localStorage.setItem('ticketSearchCollapsed', 'false');
+        } else {
+            collapseContent.classList.add('collapsed');
+            collapseIcon.classList.add('collapsed');
+            localStorage.setItem('ticketSearchCollapsed', 'true');
+        }
+    });
 }
 
 // ======================== 核心发送逻辑 ========================
@@ -143,20 +250,14 @@ async function sendMessageFixed() {
         alert('请输入问题或上传图片/视频');
         return;
     }
-
     const messageText = userText;
     const fileToSend = currentFile;
     const fileName = fileToSend ? fileToSend.name : '';
-
-    // 显示用户消息
     let displayText = messageText;
-    if (fileToSend) {
-        displayText += `\n[已上传文件: ${fileName}]`;
-    }
+    if (fileToSend) displayText += `\n[已上传文件: ${fileName}]`;
     addMessage('user', displayText);
     conversationHistory.push({ role: 'user', content: messageText });
 
-    // 清空输入框和文件预览
     chatInput.value = '';
     if (fileToSend) {
         currentFile = null;
@@ -173,9 +274,7 @@ async function sendMessageFixed() {
         formData.append('message', messageText);
         const recentHistory = conversationHistory.slice(-10);
         formData.append('history', JSON.stringify(recentHistory));
-        if (fileToSend) {
-            formData.append('image', fileToSend);
-        }
+        if (fileToSend) formData.append('image', fileToSend);
 
         const res = await fetch('http://localhost:8000/chat', {
             method: 'POST',
@@ -185,28 +284,17 @@ async function sendMessageFixed() {
         const data = await res.json();
 
         hideThinkingIndicator();
-
-        let assistantFullReply = data.reply || '抱歉，未获得有效回复。';
-
-        // 创建带思考链折叠的助手消息容器
-        const { messageDiv, replyText } = addAssistantMessageWithThinking(assistantFullReply, { ticket_id: data.ticket_id });
-
-        // 开始对最终回复进行打字机输出
+        const assistantFullReply = data.reply || '抱歉，未获得有效回复。';
+        const { messageDiv, replyText } = addAssistantMessageWithThinking(assistantFullReply, {});
         isStreaming = true;
         await typeTextToReplyContainer(messageDiv, replyText, 20);
         isStreaming = false;
-
-        // 保存对话历史（保存原始完整回复，包含思考链，以便下次对话上下文）
         conversationHistory.push({ role: 'assistant', content: assistantFullReply });
 
-        if (data.ticket_id) {
-            // 额外显示工单生成提示（简单消息，无需打字）
-            addMessage('assistant', `✅ 已为您生成工单：${data.ticket_id}`);
-            conversationHistory.push({ role: 'assistant', content: `工单号: ${data.ticket_id}` });
+        if (data.ticket_preview && data.preview_id) {
+            attachTicketPreviewCard(messageDiv, data.ticket_preview, data.preview_id);
         }
-
         chatMessages.scrollTop = chatMessages.scrollHeight;
-
     } catch (err) {
         hideThinkingIndicator();
         console.error(err);
@@ -260,10 +348,16 @@ function newChat() {
 if (sendBtn) sendBtn.addEventListener('click', sendMessageFixed);
 if (newChatBtn) newChatBtn.addEventListener('click', newChat);
 if (backBtn) backBtn.addEventListener('click', () => window.location.href = 'welcome.html');
-
+if (userSearchBtn) userSearchBtn.addEventListener('click', searchUserTicket);
+if (userSearchInput) userSearchInput.addEventListener('keypress', (e) => {
+    if (e.key === 'Enter') searchUserTicket();
+});
 chatInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         sendMessageFixed();
     }
 });
+
+// 初始化折叠
+initCollapse();

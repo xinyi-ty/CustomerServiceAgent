@@ -70,3 +70,36 @@ from openai import OpenAI
 #         print("API 地址可能不对，或者平台不支持这个接口。")
 # except Exception as e:
 #     print(f"请求失败: {e}")
+
+
+# test_role_history.py
+import requests
+import json
+
+BASE_URL = "http://localhost:8000"
+
+def test_role(role_name, role_param):
+    url = f"{BASE_URL}/history"
+    if role_param:
+        url += f"?role={role_param}"
+    print(f"\n=== 测试角色: {role_name} (参数: {role_param if role_param else '无'}) ===")
+    try:
+        resp = requests.get(url)
+        resp.raise_for_status()
+        data = resp.json()
+        tickets = data.get("tickets", [])
+        print(f"共获取 {len(tickets)} 个工单")
+        for i, t in enumerate(tickets[:5]):  # 只显示前5个
+            urgency = t.get("agent_business_assessment", {}).get("urgency_level", "未知")
+            category = t.get("agent_business_assessment", {}).get("issue_category", "未知")
+            print(f"  {i+1}. ID: {t.get('ticket_id')} | 紧急度: {urgency} | 类别: {category}")
+        if len(tickets) > 5:
+            print(f"  ... 还有 {len(tickets)-5} 个工单未显示")
+    except Exception as e:
+        print(f"请求失败: {e}")
+
+if __name__ == "__main__":
+    test_role("全部（无角色）", None)
+    test_role("一线员工 (frontline)", "frontline")
+    test_role("部门经理 (manager)", "manager")
+    test_role("总经理 (general)", "general")
