@@ -1,89 +1,278 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>管理者看板 - 智能客诉系统</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .admin-container { max-width: 1200px; margin: 0 auto; padding: 32px 24px; }
-        .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px; flex-wrap: wrap; gap: 16px; }
-        .logo-area { display: flex; align-items: center; gap: 16px; }
-        .logo-icon { width: 40px; height: 40px; background: #0f172a; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; font-weight: 700; }
-        .admin-header h2 { font-size: 20px; font-weight: 600; color: #0f172a; margin: 0; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理者看板 - 智能客诉系统</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #f1f5f9;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --sub: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-dark: #1d4ed8;
+      --success: #10b981;
+      --danger: #dc2626;
+      --shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+      --glow: rgba(37, 99, 235, 0.1);
+    }
 
-        .action-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-        .role-selector { display: flex; gap: 4px; background: #f1f5f9; padding: 4px; border-radius: 8px; }
-        .role-btn { background: transparent; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.2s; color: #475569; }
-        .role-btn.active { background: white; color: #0f172a; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: var(--text);
+      line-height: 1.5;
+      background: var(--bg);
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
 
-        .search-container { display: flex; gap: 8px; align-items: center; background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 4px 4px 4px 12px; }
-        .search-input { border: none; outline: none; font-size: 13px; padding: 6px 0; width: 160px; }
-        .search-btn { background: #0f172a; border: none; border-radius: 6px; padding: 6px 14px; color: white; font-weight: 500; cursor: pointer; font-size: 13px; }
-        .action-btn { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; color: #475569; }
-        .action-btn:hover { background: #f8fafc; }
+    .grid-bg {
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(15, 23, 42, .045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 23, 42, .045) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: -10;
+    }
+    .glow-top {
+      position: fixed; top: -200px; right: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, var(--primary), transparent 70%);
+      opacity: 0.1;
+      border-radius: 50%; z-index: -5;
+    }
 
-        .ticket-grid { display: flex; flex-direction: column; gap: 16px; }
-        .history-card { background: white; border-radius: 12px; padding: 20px; border: 1px solid #e2e8f0; transition: all 0.2s; }
-        .history-card:hover { border-color: #cbd5e1; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
+    .admin-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 24px;
+      position: relative;
+      z-index: 1;
+    }
 
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
-        .ticket-id { font-size: 15px; font-weight: 600; color: #0f172a; font-family: monospace; }
+    .admin-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
 
-        /* 状态与紧急度徽章 */
-        .badge { display: inline-flex; align-items: center; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; letter-spacing: 0.5px; text-transform: uppercase; }
-        .badge-pending { background: #fef2f2; color: #991b1b; }
-        .badge-resolved { background: #f0fdf4; color: #166534; }
-        .badge-high { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
-        .badge-medium { background: #fffbeb; color: #d97706; border: 1px solid #fde68a; }
-        .badge-low { background: #f0f9ff; color: #0284c7; border: 1px solid #bae6fd; }
+    .logo-area { display: flex; align-items: center; gap: 16px; }
 
-        .card-meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; padding: 12px; background: #f8fafc; border-radius: 8px; font-size: 13px; }
-        .meta-item { display: flex; flex-direction: column; gap: 4px; }
-        .meta-label { font-size: 11px; color: #64748b; font-weight: 500; text-transform: uppercase; }
-        .meta-value { color: #0f172a; font-weight: 500; }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: #0f172a;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 14px; font-weight: 700;
+      position: relative;
+    }
+    .logo-icon::after {
+      content: '';
+      position: absolute; bottom: -4px; right: -4px;
+      width: 12px; height: 12px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.8; }
+      100% { transform: scale(1); opacity: 1; }
+    }
 
-        .reply-preview { font-size: 13px; color: #334155; background: #f8fafc; padding: 12px 16px; border-radius: 8px; border-left: 3px solid #2563eb; line-height: 1.6; white-space: pre-wrap; }
+    .admin-header h2 { font-size: 20px; font-weight: 600; color: #0f172a; margin: 0; }
 
-        .card-footer { display: flex; justify-content: flex-end; margin-top: 16px; }
-        .process-btn { background: #0f172a; border: none; border-radius: 6px; padding: 8px 20px; color: white; font-size: 13px; font-weight: 500; cursor: pointer; transition: 0.2s; }
-        .process-btn:hover { background: #1e293b; }
-        .process-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+    .action-bar { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
 
-        .empty-state { text-align: center; padding: 80px 20px; background: white; border-radius: 12px; border: 1px dashed #cbd5e1; }
-        .empty-state h3 { font-size: 16px; color: #0f172a; margin-bottom: 8px; }
-        .empty-state p { color: #64748b; font-size: 14px; }
-    </style>
+    .role-selector {
+      display: flex; gap: 4px;
+      background: #f1f5f9;
+      padding: 4px;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .role-btn {
+      background: transparent; border: none;
+      padding: 8px 16px; border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer; transition: all 0.2s; color: #475569;
+    }
+    .role-btn.active {
+      background: white; color: #0f172a;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); font-weight: 600;
+    }
+
+    .search-container {
+      display: flex; gap: 8px; align-items: center;
+      background: white; border: 1px solid #e2e8f0;
+      border-radius: 12px; padding: 4px 4px 4px 12px;
+    }
+    .search-input {
+      border: none; outline: none; font-size: 13px;
+      padding: 6px 0; width: 160px;
+    }
+    .search-btn {
+      background: #0f172a; border: none; border-radius: 8px;
+      padding: 6px 14px; color: white; font-weight: 500;
+      cursor: pointer; font-size: 13px;
+    }
+
+    .action-btn {
+      background: white; border: 1px solid #e2e8f0;
+      border-radius: 12px; padding: 8px 16px;
+      font-size: 13px; font-weight: 500;
+      cursor: pointer; color: #475569; transition: all 0.2s;
+    }
+    .action-btn:hover { background: #f8fafc; transform: translateY(-2px); }
+
+    .ticket-grid { display: flex; flex-direction: column; gap: 12px; }
+
+    /* ========== 折叠卡片样式 ========== */
+    .history-card {
+      background: white;
+      border-radius: 16px;
+      border: 1px solid #e2e8f0;
+      transition: all 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .history-card:hover { border-color: #cbd5e1; box-shadow: 0 8px 24px rgba(0,0,0,0.05); }
+    .history-card.pending { border-left: 4px solid var(--danger); }
+    .history-card.resolved { border-left: 4px solid var(--success); }
+    .history-card.medium { border-left: 4px solid #d97706; }
+
+    /* 折叠头部：始终可见 */
+    .card-collapse-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 18px 24px;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .card-collapse-header:hover { background: #f8fafc; }
+
+    .collapse-left { display: flex; align-items: center; gap: 16px; }
+    .ticket-id { font-size: 15px; font-weight: 700; color: #0f172a; font-family: monospace; }
+    .collapse-badges { display: flex; gap: 8px; }
+
+    .collapse-arrow {
+      width: 20px; height: 20px;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.25s ease;
+      color: var(--sub);
+    }
+    .history-card.expanded .collapse-arrow { transform: rotate(180deg); }
+
+    /* 折叠内容区 */
+    .card-collapse-body {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+    .history-card.expanded .card-collapse-body { max-height: 800px; }
+
+    .card-body-inner { padding: 0 24px 24px 24px; border-top: 1px solid #f1f5f9; }
+
+    .data-section { margin-top: 16px; }
+    .section-label {
+      font-size: 11px; font-weight: 700; color: var(--sub);
+      text-transform: uppercase; letter-spacing: 1px;
+      margin-bottom: 10px; padding-bottom: 6px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+
+    .card-meta {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+    }
+    .meta-item { display: flex; flex-direction: column; gap: 4px; }
+    .meta-label { font-size: 11px; color: #64748b; font-weight: 500; text-transform: uppercase; }
+    .meta-value { color: #0f172a; font-weight: 500; font-size: 13px; word-break: break-all; }
+
+    .reply-preview {
+      font-size: 13px; color: #334155;
+      background: #f8fafc; padding: 12px 16px;
+      border-radius: 12px; border-left: 3px solid var(--primary);
+      line-height: 1.6; white-space: pre-wrap;
+      max-height: 150px; overflow-y: auto;
+    }
+
+    .card-footer { display: flex; justify-content: flex-end; margin-top: 16px; }
+    .process-btn {
+      background: #0f172a; border: none; border-radius: 8px;
+      padding: 10px 24px; color: white; font-size: 13px;
+      font-weight: 500; cursor: pointer; transition: 0.2s;
+    }
+    .process-btn:hover { background: #1e293b; transform: translateY(-2px); }
+    .process-btn:disabled { background: #94a3b8; cursor: not-allowed; }
+
+    /* ========== 蓝色系徽章 ========== */
+    .badge {
+      display: inline-flex; align-items: center;
+      padding: 4px 10px; border-radius: 6px;
+      font-size: 11px; font-weight: 600;
+      letter-spacing: 0.3px; white-space: nowrap;
+    }
+    .badge-high { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+    .badge-medium { background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-low { background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; }
+    .badge-pending { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .badge-resolved { background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0; }
+
+    .empty-state {
+      text-align: center; padding: 80px 20px;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 16px; border: 1px dashed #cbd5e1;
+      backdrop-filter: blur(10px);
+    }
+    .empty-state h3 { font-size: 16px; color: #0f172a; margin-bottom: 8px; }
+    .empty-state p { color: #64748b; font-size: 14px; }
+  </style>
 </head>
 <body>
-    <div class="admin-container">
-        <div class="admin-header">
-            <div class="logo-area">
-                <div class="logo-icon">AI</div>
-                <h2>工单分发与路由看板</h2>
-            </div>
-            <div class="action-bar">
-                <div class="role-selector">
-                    <button class="role-btn active" data-role="frontline">一线员工 (Low)</button>
-                    <button class="role-btn" data-role="manager">部门经理 (Medium)</button>
-                    <button class="role-btn" data-role="general">总经理 (High)</button>
-                </div>
-                <div class="search-container">
-                    <input type="text" id="searchTicketId" class="search-input" placeholder="检索工单号...">
-                    <button id="searchBtn" class="search-btn">检索</button>
-                </div>
-                <button id="refreshBtn" class="action-btn">刷新数据</button>
-                <button id="backToWelcome" class="action-btn">返回首页</button>
-            </div>
-        </div>
+  <div class="grid-bg"></div>
+  <div class="glow-top"></div>
 
-        <div id="historyContainer" class="ticket-grid">
-            <div class="empty-state">
-                <h3>正在加载工单数据...</h3>
-                <p>请确保后端服务运行在 http://localhost:8000</p>
-            </div>
+  <div class="admin-container">
+    <div class="admin-header">
+      <div class="logo-area">
+        <div class="logo-icon">AI</div>
+        <h2>全域工单指挥中心</h2>
+      </div>
+      <div class="action-bar">
+        <div class="role-selector">
+          <button class="role-btn active" data-role="frontline">一线员工 (Low)</button>
+          <button class="role-btn" data-role="manager">部门经理 (Medium)</button>
+          <button class="role-btn" data-role="general">总经理 (High)</button>
         </div>
+        <div class="search-container">
+          <input type="text" id="searchTicketId" class="search-input" placeholder="检索工单号...">
+          <button id="searchBtn" class="search-btn">检索</button>
+        </div>
+        <button id="refreshBtn" class="action-btn">刷新数据</button>
+        <button id="backToWelcome" class="action-btn">返回首页</button>
+      </div>
     </div>
-    <script src="admin.js"></script>
+
+    <div id="historyContainer" class="ticket-grid">
+      <div class="empty-state">
+        <h3>正在加载工单数据...</h3>
+        <p>请确保后端服务运行在 http://localhost:8000</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="admin.js"></script>
 </body>
 </html>

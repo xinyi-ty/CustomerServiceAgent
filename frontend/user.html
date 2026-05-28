@@ -1,152 +1,553 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>智能售后助手 - 客户端</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        /* 用户端专属样式补充 */
-        .app { display: flex; height: 100vh; background: #f5f7fb; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>智能售后助手 - 客户端</title>
+  <style>
+    /* ======================= 基础与变量 ======================= */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --sub: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+      --glass: rgba(255, 255, 255, 0.75);
+    }
 
-        /* 侧边栏 */
-        .sidebar { width: 280px; background: #fafcff; border-right: 1px solid #e6edf4; display: flex; flex-direction: column; padding: 20px 16px; }
-        .brand { display: flex; align-items: center; gap: 12px; padding: 0 8px 20px 8px; border-bottom: 1px solid #e6edf4; margin-bottom: 20px; }
-        .brand-logo { width: 36px; height: 36px; background: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 14px; }
-        .brand-text { font-weight: 600; font-size: 16px; color: #1e2a3e; }
-        .brand-sub { font-size: 11px; color: #64748b; margin-top: 2px; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      height: 100vh;
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
 
-        .new-chat-btn { width: 100%; padding: 10px 12px; background: #2563eb; border: none; border-radius: 6px; font-size: 14px; font-weight: 500; color: white; cursor: pointer; transition: all 0.2s; margin-bottom: 24px; display: flex; align-items: center; justify-content: center; gap: 8px; }
-        .new-chat-btn:hover { background: #1d4ed8; }
-        .icon-plus { width: 14px; height: 14px; position: relative; }
-        .icon-plus::before, .icon-plus::after { content: ''; position: absolute; background: white; border-radius: 1px; }
-        .icon-plus::before { width: 14px; height: 2px; top: 6px; left: 0; }
-        .icon-plus::after { width: 2px; height: 14px; left: 6px; top: 0; }
+    /* ======================= 背景层 ======================= */
+    .grid-bg {
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(15, 23, 42, .03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 23, 42, .03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: -10;
+    }
+    .glow-bl {
+      position: fixed; bottom: -200px; left: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.08), transparent 70%);
+      border-radius: 50%; z-index: -5;
+    }
 
-        .history-title { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 12px; padding-left: 8px; letter-spacing: 0.5px; text-transform: uppercase; }
+    /* ======================= 布局 ======================= */
+    .app { display: flex; height: 100vh; position: relative; }
 
-        /* 工单查询折叠区 */
-        .ticket-search { margin-top: auto; border-top: 1px solid #e6edf4; padding-top: 16px; }
-        .collapse-header { display: flex; justify-content: space-between; align-items: center; cursor: pointer; padding: 4px 8px; }
-        .collapse-icon { font-size: 10px; color: #64748b; transition: transform 0.2s; }
-        .collapse-icon.collapsed { transform: rotate(-90deg); }
-        .collapse-content { overflow: hidden; transition: max-height 0.3s ease; max-height: 500px; margin-top: 8px; }
-        .collapse-content.collapsed { max-height: 0; margin-top: 0; }
+    /* ======================= 侧边栏 ======================= */
+    .sidebar {
+      width: 300px;
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      border-right: 1px solid rgba(255, 255, 255, 0.6);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 16px;
+      z-index: 10;
+      box-shadow: 4px 0 24px rgba(0,0,0,0.02);
+    }
 
-        .search-row { display: flex; gap: 8px; padding: 0 8px; }
-        #userSearchTicket { flex: 1; padding: 8px 12px; border: 1px solid #e6edf4; border-radius: 6px; font-size: 13px; background: white; }
-        #userSearchTicket:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.1); }
-        #userSearchBtn { background: #2563eb; border: none; border-radius: 6px; padding: 0 14px; color: white; font-weight: 500; cursor: pointer; font-size: 13px; }
-        #searchResult { padding: 0 8px; margin-top: 12px; max-height: 200px; overflow-y: auto; font-size: 12px; }
-        .search-result-item { background: white; border: 1px solid #e6edf4; border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 0 8px 24px 8px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .brand-logo {
+      width: 36px; height: 36px;
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 14px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    .brand-text { font-weight: 700; font-size: 16px; color: var(--text); }
+    .brand-sub { font-size: 11px; color: var(--sub); margin-top: 2px; }
 
-        .sidebar-footer { padding: 16px 8px 0; }
-        .back-btn { width: 100%; padding: 10px; background: transparent; border: 1px solid #e6edf4; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 500; transition: 0.2s; color: #64748b; }
-        .back-btn:hover { background: #f1f5f9; border-color: #cbd5e1; }
+    .new-chat-btn {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      border: none;
+      border-radius: 16px;
+      font-size: 14px;
+      font-weight: 600;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-bottom: 24px;
+      display: flex; align-items: center; justify-content: center; gap: 8px;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.25);
+    }
+    .new-chat-btn:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(37, 99, 235, 0.35); }
+    .new-chat-btn:active { transform: scale(0.98); }
 
-        /* 主内容区 */
-        .main { flex: 1; display: flex; flex-direction: column; background: white; }
-        .header { height: 60px; display: flex; align-items: center; padding: 0 28px; border-bottom: 1px solid #f1f5f9; }
-        .header-title { font-size: 16px; font-weight: 600; color: #1e2a3e; }
+    /* 侧边栏区块标题 */
+    .section-title {
+      font-size: 11px; font-weight: 700; color: var(--sub);
+      margin-bottom: 10px; padding-left: 8px;
+      letter-spacing: 1px; text-transform: uppercase;
+    }
 
-        .chat-container { flex: 1; overflow-y: auto; padding: 24px 0; }
-        #chatMessages { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; padding: 0 24px; }
+    /* 工单查询区 */
+    .search-section { margin-bottom: 24px; }
+    .search-box {
+      display: flex; gap: 8px; margin-bottom: 10px;
+    }
+    .search-input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      outline: none;
+      background: rgba(255,255,255,0.8);
+      transition: border-color 0.2s;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .search-btn {
+      padding: 0 16px;
+      background: var(--text);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .search-btn:hover { opacity: 0.9; }
 
-        .message { display: flex; }
-        .message.user { justify-content: flex-end; }
-        .bubble { max-width: 80%; padding: 12px 16px; border-radius: 12px; line-height: 1.6; font-size: 14px; white-space: pre-wrap; word-break: break-word; }
-        .user .bubble { background: #2563eb; color: white; border-bottom-right-radius: 2px; }
-        .assistant .bubble { background: #f8fafc; color: #1e2a3e; border: 1px solid #e2e8f0; border-bottom-left-radius: 2px; }
+    .search-result {
+      max-height: 150px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .search-result::-webkit-scrollbar { width: 4px; }
+    .search-result::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
-        /* 思考过程 */
-        .think-container { margin-bottom: 10px; border-radius: 8px; overflow: hidden; border: 1px solid #e2e8f0; background: white; font-size: 12px; }
-        .think-summary { padding: 8px 12px; background: #f1f5f9; cursor: pointer; font-weight: 600; color: #475569; display: flex; align-items: center; gap: 6px; }
-        .think-content { padding: 10px 12px; background: white; line-height: 1.6; color: #64748b; border-top: 1px solid #e2e8f0; display: none; }
+    /* JS 动态生成的查询结果项 */
+    .search-result-item {
+      background: white;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+    }
 
-        /* 工单生成徽章 */
-        .ticket-badge { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding: 8px 12px; border-radius: 8px; background: #f0fdf4; border: 1px solid #bbf7d0; color: #166534; font-size: 12px; font-weight: 500; }
-        .badge-dot { width: 6px; height: 6px; background: #22c55e; border-radius: 50%; }
+    /* 历史会话折叠区 */
+    .history-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
+    .collapse-header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 8px;
+      cursor: pointer;
+      user-select: none;
+      font-size: 11px; font-weight: 700; color: var(--sub);
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+    .collapse-icon {
+      transition: transform 0.3s;
+      font-size: 10px;
+    }
+    .collapse-icon.collapsed { transform: rotate(-90deg); }
 
-        /* 底部输入区 */
-        .chat-footer { padding: 16px 24px 24px; background: white; border-top: 1px solid #f1f5f9; }
-        .input-wrapper { max-width: 800px; margin: 0 auto; display: flex; align-items: flex-end; gap: 12px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 8px 12px; transition: all 0.2s; }
-        .input-wrapper:focus-within { border-color: #2563eb; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); background: white; }
+    .collapse-content {
+      flex: 1;
+      overflow-y: auto;
+      transition: max-height 0.3s ease;
+      padding-right: 4px;
+    }
+    .collapse-content.collapsed { display: none; }
+    .collapse-content::-webkit-scrollbar { width: 4px; }
+    .collapse-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 
-        .upload-btn { background: transparent; border: 1px solid #cbd5e1; font-size: 18px; color: #64748b; cursor: pointer; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
-        .upload-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+    .empty-history {
+      padding: 20px;
+      text-align: center;
+      color: #94a3b8;
+      font-size: 12px;
+    }
 
-        textarea { flex: 1; border: none; outline: none; resize: none; font-size: 14px; line-height: 1.5; font-family: inherit; background: transparent; min-height: 24px; max-height: 120px; padding: 4px 0; }
+    /* 侧边栏底部 */
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .back-btn {
+      width: 100%;
+      padding: 12px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--sub);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .back-btn:hover { background: white; color: var(--text); border-color: #cbd5e1; }
 
-        .send-btn { background: #2563eb; border: none; color: white; width: 32px; height: 32px; border-radius: 6px; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.2s; flex-shrink: 0; }
-        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .send-btn:hover:not(:disabled) { background: #1d4ed8; }
-        .icon-arrow { width: 12px; height: 12px; border-top: 2px solid white; border-right: 2px solid white; transform: rotate(-45deg) translate(-1px, 1px); }
+    /* ======================= 主聊天区 ======================= */
+    .main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      overflow: hidden;
+    }
 
-        #filePreview { max-width: 800px; margin: 8px auto 0; font-size: 12px; color: #64748b; padding-left: 44px; }
-    </style>
+    .chat-header {
+      padding: 20px 32px;
+      background: var(--glass);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255,255,255,0.5);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 5;
+    }
+    .chat-title { font-size: 16px; font-weight: 700; }
+    .chat-status {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; color: var(--success); font-weight: 500;
+    }
+    .chat-status::before {
+      content: ''; width: 6px; height: 6px; background: var(--success);
+      border-radius: 50%; box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+
+    /* ======================= 消息流 ======================= */
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 32px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      scroll-behavior: smooth;
+    }
+    .messages::-webkit-scrollbar { width: 6px; }
+    .messages::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 6px; }
+
+    /* JS 动态生成的消息基础样式 */
+    .message {
+      display: flex;
+      gap: 16px;
+      max-width: 85%;
+      animation: fadeUp 0.4s ease;
+    }
+    .message.user { align-self: flex-end; flex-direction: row-reverse; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bubble {
+      padding: 16px 20px;
+      border-radius: 20px;
+      font-size: 14px;
+      line-height: 1.7;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .message.assistant .bubble {
+      background: white;
+      border: 1px solid var(--border);
+      border-top-left-radius: 6px;
+      color: #334155;
+    }
+    .message.user .bubble {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+      border-top-right-radius: 6px;
+      box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
+    }
+
+    /* AI 思考过程可视化 (匹配 JS 生成的 .think-container) */
+    .think-container {
+      margin-bottom: 14px;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(37, 99, 235, 0.15);
+      background: rgba(248, 250, 252, 0.8);
+    }
+    .think-summary {
+      padding: 12px 16px;
+      background: rgba(37, 99, 235, 0.05);
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+    .think-summary:hover { background: rgba(37, 99, 235, 0.08); }
+    .think-content {
+      padding: 16px;
+      font-size: 12px;
+      color: var(--sub);
+      line-height: 1.8;
+      display: none; /* JS 会控制 display */
+      border-top: 1px dashed rgba(37, 99, 235, 0.1);
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+
+    /* 回复内容区 */
+    .reply-content {
+      margin-top: 4px;
+    }
+
+    /* 工单生成徽章 (匹配 JS 生成的 .ticket-badge) */
+    .ticket-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 16px;
+      padding: 10px 16px;
+      background: linear-gradient(90deg, #f0fdf4, #ecfdf5);
+      border: 1px solid #bbf7d0;
+      border-radius: 12px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #166534;
+      box-shadow: 0 0 12px rgba(34, 197, 94, 0.15);
+    }
+    .badge-dot {
+      width: 6px; height: 6px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+
+    /* 正在思考指示器 */
+    #thinkingIndicator .bubble {
+      background: rgba(255,255,255,0.9);
+      border: 1px dashed var(--primary);
+      color: var(--primary);
+      font-weight: 500;
+      position: relative;
+      overflow: hidden;
+    }
+    #thinkingIndicator .bubble::after {
+      content: '';
+      position: absolute;
+      top: 0; left: -100%;
+      width: 100%; height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(37,99,235,0.05), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      100% { left: 100%; }
+    }
+
+    /* ======================= 输入区 ======================= */
+    .input-area {
+      padding: 16px 32px 32px;
+      background: linear-gradient(to top, var(--bg) 80%, transparent);
+    }
+
+    .file-preview {
+      font-size: 12px;
+      color: var(--primary);
+      background: rgba(37, 99, 235, 0.05);
+      padding: 8px 16px;
+      border-radius: 12px 12px 0 0;
+      border: 1px solid rgba(37, 99, 235, 0.1);
+      border-bottom: none;
+      display: none; /* JS 会控制显示 */
+      margin-bottom: -1px;
+    }
+    .file-preview:not(:empty) { display: block; }
+
+    .input-wrapper {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 12px 12px 12px 20px;
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    .file-preview:not(:empty) + .input-wrapper {
+      border-top-left-radius: 0;
+      border-top-right-radius: 0;
+    }
+    .input-wrapper:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 8px 32px rgba(37, 99, 235, 0.12);
+    }
+
+    .input-field {
+      flex: 1;
+      border: none;
+      outline: none;
+      font-size: 14px;
+      resize: none;
+      max-height: 120px;
+      line-height: 1.5;
+      padding: 8px 0;
+      font-family: inherit;
+      background: transparent;
+    }
+
+    .input-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      padding-bottom: 4px;
+    }
+
+    .icon-btn {
+      width: 36px; height: 36px;
+      border-radius: 12px;
+      border: none;
+      background: #f1f5f9;
+      color: var(--sub);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+    }
+    .icon-btn:hover { background: #e2e8f0; color: var(--text); }
+
+    .send-btn {
+      width: 40px; height: 40px;
+      border-radius: 14px;
+      border: none;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.2s;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+    }
+    .send-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4); }
+    .send-btn:disabled { background: #cbd5e1; box-shadow: none; cursor: not-allowed; transform: none; }
+
+    /* ======================= 响应式 ======================= */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .messages { padding: 16px; }
+      .input-area { padding: 16px; }
+      .message { max-width: 95%; }
+    }
+  </style>
 </head>
 <body>
-    <div class="app">
-        <aside class="sidebar">
-            <div class="brand">
-                <div class="brand-logo">AI</div>
-                <div>
-                    <div class="brand-text">智能售后助手</div>
-                    <div class="brand-sub">Enterprise Service</div>
-                </div>
-            </div>
+  <div class="grid-bg"></div>
+  <div class="glow-bl"></div>
 
-            <button id="newChatBtn" class="new-chat-btn">
-                <span class="icon-plus"></span> 新建对话
+  <div class="app">
+    <!-- ======================= 侧边栏 ======================= -->
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">AI</div>
+        <div>
+          <div class="brand-text">智能售后助手</div>
+          <div class="brand-sub">Enterprise Service</div>
+        </div>
+      </div>
+
+      <button id="newChatBtn" class="new-chat-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        新建对话
+      </button>
+
+      <!-- 工单查询区 -->
+      <div class="search-section">
+        <div class="section-title">工单追踪</div>
+        <div class="search-box">
+          <input type="text" id="userSearchTicket" class="search-input" placeholder="输入工单号查询...">
+          <button id="userSearchBtn" class="search-btn">查询</button>
+        </div>
+        <div id="searchResult" class="search-result"></div>
+      </div>
+
+      <!-- 历史会话折叠区 -->
+      <div class="history-section">
+        <div id="collapseHeader" class="collapse-header">
+          <span>历史会话</span>
+          <span id="collapseIcon" class="collapse-icon">▼</span>
+        </div>
+        <div id="collapseContent" class="collapse-content">
+          <div class="empty-history">当前会话进行中...</div>
+        </div>
+      </div>
+
+      <div class="sidebar-footer">
+        <button id="backToWelcome" class="back-btn">返回首页</button>
+      </div>
+    </aside>
+
+    <!-- ======================= 主聊天区 ======================= -->
+    <main class="main">
+      <header class="chat-header">
+        <div class="chat-title">智能客诉服务</div>
+        <div class="chat-status">系统运行正常</div>
+      </header>
+
+      <div id="chatMessages" class="messages">
+        <!-- 初始欢迎语 -->
+        <div class="message assistant">
+          <div class="bubble">
+            您好，我是智能售后助手。<br>
+            您可以描述遇到的问题，或点击右下角图标上传设备故障图片。系统将自动进行 OCR 识别、质保核验，并生成专业处理建议。
+          </div>
+        </div>
+      </div>
+
+      <!-- 输入区 -->
+      <div class="input-area">
+        <div id="filePreview" class="file-preview"></div>
+        <div class="input-wrapper">
+          <textarea id="chatInput" class="input-field" placeholder="描述您的问题，或按 Enter 发送..." rows="1"></textarea>
+          <div class="input-actions">
+            <input type="file" id="chatImage" hidden accept="image/*">
+            <button id="fileLabel" class="icon-btn" title="上传图片">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
             </button>
+            <button id="sendBtn" class="send-btn" disabled>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
 
-            <div class="ticket-search">
-                <div class="collapse-header" id="collapseHeader">
-                    <div class="history-title">工单查询</div>
-                    <span class="collapse-icon" id="collapseIcon">▼</span>
-                </div>
-                <div class="collapse-content" id="collapseContent">
-                    <div class="search-row">
-                        <input type="text" id="userSearchTicket" placeholder="输入工单号查询" />
-                        <button id="userSearchBtn">查询</button>
-                    </div>
-                    <div id="searchResult"></div>
-                </div>
-            </div>
-
-            <div class="sidebar-footer">
-                <button id="backToWelcome" class="back-btn">返回首页</button>
-            </div>
-        </aside>
-
-        <main class="main">
-            <header class="header">
-                <div class="header-title">智能问题分析与工单协同</div>
-            </header>
-
-            <section class="chat-container">
-                <div id="chatMessages">
-                    <div class="message assistant">
-                        <div class="bubble">
-                            您好，我是智能售后助手。<br>
-                            您可以描述遇到的问题，或上传设备故障图片/视频。<br>
-                            系统将自动进行 OCR 识别、质保核验，并生成专业处理建议。
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <footer class="chat-footer">
-                <div class="input-wrapper">
-                    <button id="fileLabel" class="upload-btn" type="button" title="上传图片/视频">+</button>
-                    <input type="file" id="chatImage" hidden accept="image/*,video/mp4,video/quicktime" />
-                    <textarea id="chatInput" rows="1" placeholder="请描述您的设备故障或问题..."></textarea>
-                    <button id="sendBtn" class="send-btn" title="发送"><span class="icon-arrow"></span></button>
-                </div>
-                <div id="filePreview"></div>
-            </footer>
-        </main>
-    </div>
-    <script src="user.js"></script>
+  <script src="user.js"></script>
 </body>
 </html>
