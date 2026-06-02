@@ -1,3 +1,8 @@
+"""
+客诉自动回复与出单分发智能体 - FastAPI 应用入口
+================================================
+提供 RESTful API 服务，包含客诉处理、工单管理、健康检查等接口。
+"""
 from chat_router import router as chat_router
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,9 +20,11 @@ logger = logging.getLogger(__name__)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """应用生命周期管理：启动时初始化数据库和 RAG 索引，关闭时清理资源。"""
     init_db()
     logger.info("[INFO] 数据库初始化完成")
 
+    # 检查 RAG 向量库是否为空，首次启动自动构建索引
     try:
         collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
         if collection.count() == 0:
@@ -38,6 +45,7 @@ app = FastAPI(title="客诉自动回复与出单分发智能体", lifespan=lifes
 # 挂载核心业务路由
 app.include_router(chat_router)
 
+# 跨域配置：允许前端页面（file:// 或 http://）跨域访问 API
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
