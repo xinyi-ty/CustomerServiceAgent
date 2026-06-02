@@ -31,39 +31,35 @@
 
 ```
 CustomerServiceAgent/
-├── backend/                          # 后端服务（FastAPI）
-│   ├── main.py                       # 应用入口 + API 路由
-│   ├── chat_router.py                # 核心客诉处理接口
-│   ├── config.py                     # 全局配置模块
-│   ├── models.py                     # Pydantic 数据模型
-│   ├── database.py                   # SQLite 数据库操作
-│   ├── llm_client.py                 # LLM 大模型调用
-│   ├── prompt.txt                    # LLM 系统提示词
-│   ├── rag_simple.py                 # RAG 检索增强生成
-│   ├── ocr_utils.py                  # 多模态 OCR（图片/视频）
-│   ├── product_lookup.py             # 产品注册表查询
-│   ├── warranty.py                   # 质保期校验
-│   ├── seed_data.py                  # 测试数据种子脚本
-│   ├── mock_erp_server.py            # 模拟 ERP 服务器（调试用）
-│   ├── requirements.txt              # Python 依赖清单
-│   ├── .env.example                  # 环境变量模板
-│   ├── .env                          # 环境变量（需自行创建）
-│   └── data/                         # 运行时数据
-│       ├── sop/sop_document.txt      #  SOP 知识库文档
-│       ├── products.json             #  产品注册表
-│       ├── chroma_db/                #  RAG 向量数据库
-│       └── tickets.db                #  工单数据库
-├── frontend/                         # 前端界面
-│   ├── welcome.html                  #  欢迎页
-│   ├── user.html + user.js           #  用户端（PC 聊天页面）
-│   ├── admin.html + admin.js         #  管理端（工单看板）
-│   ├── mobile.html + mobile.js       #  移动端 H5 页面
-│   └── style.css                     #  全局样式
-├── docs/                             # 文档
-│   ├── agent_routing.md              #  Agent 路由定级说明
-│   ├── deployment_guide.md           #  本文件（部署手册）
-│   └── INTERFACE_multimodal.md       #  多模态接口规范
-├── 赛事要求.docx                     # 比赛需求文档
+├── backend/                              # 后端服务（FastAPI）
+│   ├── main.py                           # 应用入口 + API 路由
+│   ├── chat_router.py                    # 核心客诉处理接口
+│   ├── config.py                         # 全局配置模块
+│   ├── models.py                         # Pydantic 数据模型
+│   ├── database.py                       # SQLite 数据库操作
+│   ├── llm_client.py                     # LLM 大模型调用
+│   ├── prompt.txt                        # LLM 系统提示词
+│   ├── rag_simple.py                     # RAG 检索增强生成
+│   ├── ocr_utils.py                      # 多模态 OCR（图片/视频）
+│   ├── product_lookup.py                 # 产品注册表查询
+│   ├── warranty.py                       # 质保期校验
+│   ├── seed_data.py                      # 种子数据脚本
+│   ├── mock_erp_server.py                # 模拟 ERP 服务器
+│   ├── requirements.txt                  # Python 依赖清单
+│   ├── .env.example                      # 环境变量模板（复制为 .env 使用）
+│   └── data/                             # 数据目录
+│       ├── sop/sop_document.txt          #  SOP 知识库文档
+│       └── products.json                 #  产品注册表
+├── frontend/                             # 前端界面
+│   ├── welcome.html                      #  欢迎页
+│   ├── user.html + user.js               #  PC 用户端（聊天）
+│   ├── admin.html + admin.js             #  管理端（工单看板）
+│   ├── mobile.html + mobile.js           #  移动端 H5 页面
+│   └── style.css                         #  全局样式
+├── docs/                                 # 文档
+│   ├── agent_routing.md                  #  Agent 路由定级说明
+│   └── deployment_guide.md               #  本文件（部署手册）
+├── 赛事要求.docx                         # 比赛需求文档
 └── .gitignore
 ```
 
@@ -112,6 +108,16 @@ cp backend\.env.example backend\.env
 | `LLM_API_KEY` | 大模型 API 密钥 | [DeepSeek](https://platform.deepseek.com/) / [阿里云百炼](https://bailian.console.aliyun.com/) |
 | `DASHSCOPE_API_KEY` | RAG 向量化密钥 | [阿里云百炼控制台](https://bailian.console.aliyun.com/) |
 
+#### ERP 系统配置说明（可选）
+
+ERP 配置用于质保核验（加分项），**不配置不影响核心功能**，系统会自动降级为本地 SN 码规则模拟：
+
+| 模式 | 配置方式 | 效果 |
+|:----|:---------|:-----|
+| **本地模拟（默认）** | `ERP_API_URL=` 留空 | 基于 SN 码中的生产日期 + 2 年质保期本地计算 |
+| **Mock 测试** | `ERP_API_URL=http://127.0.0.1:8001`<br>`ERP_API_KEY=mock_secret_token_123` | 运行 `mock_erp_server.py` 即可本地调试 ERP 对接 |
+| **真实 ERP** | 填写实际 ERP 接口地址和密钥 | 对接企业真实质保系统 |
+
 ### 3.5 准备 SOP 知识库
 
 系统已内置示例 SOP 文档 `backend/data/sop/sop_document.txt`，包含完整的十大类故障处置细则。可替换为真实企业 SOP。
@@ -136,7 +142,9 @@ python main.py
 
 服务默认运行在 `http://localhost:8000`
 
-#### 启动 Mock ERP 服务器（可选）
+#### 启动 Mock ERP 服务器（可选，调试质保核验用）
+
+Mock ERP 是一个模拟的企业质保查询接口，用于本地验证质保核验流程（加分项）。启动方式：
 
 ```bash
 # 另开一个终端
@@ -146,8 +154,23 @@ python mock_erp_server.py
 
 Mock ERP 运行在 `http://127.0.0.1:8001`
 
-> 仅当 `.env` 中配置了 `ERP_API_URL=http://127.0.0.1:8001` 时有效。
-> 未配置则自动降级为本地 SN 码规则模拟。
+然后在 `.env` 中配置：
+```ini
+ERP_API_URL=http://127.0.0.1:8001
+ERP_API_KEY=mock_secret_token_123
+```
+
+Mock 服务器支持以下测试场景：
+
+| SN 码 | 模拟行为 | 用途 |
+|-------|---------|------|
+| `SN202501001` | 返回在保状态 | 验证正常在保流程 |
+| `SN202005002` | 返回已过保状态 | 验证过保处理流程 |
+| `SN999999999` | 返回 404 查无此机 | 验证 SN 不存在时的容错 |
+| `SN_TIMEOUT` | 延迟 6 秒响应 | 验证超时降级机制 |
+| `SN_ERROR` | 返回 500 错误 | 验证 ERP 崩溃降级 |
+
+> **不配置 ERP 也没关系**，系统自动降级为本地 SN 码规则模拟：从 SN 码中提取生产年份和月份，按 2 年质保期计算是否在保。质保核验的加分项功能完整，评审不会因为未连接真实 ERP 扣分。
 
 ### 3.8 访问前端
 
