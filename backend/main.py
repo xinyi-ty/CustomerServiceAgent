@@ -62,11 +62,11 @@ async def history(
 ):
     try:
         if role == "frontline":
-            base_tickets = get_tickets_by_urgency("Low")
+            base_tickets = get_tickets_by_urgency("low")
         elif role == "manager":
-            base_tickets = get_tickets_by_urgency("Medium")
+            base_tickets = get_tickets_by_urgency("medium")
         elif role == "general":
-            base_tickets = get_tickets_by_urgency("High")
+            base_tickets = get_tickets_by_urgency("high")
         else:
             base_tickets = get_all_tickets()
 
@@ -75,7 +75,7 @@ async def history(
         else:
             filtered = base_tickets
 
-        filtered.sort(key=lambda x: (0 if x.get("status") == "未处理" else 1, x.get("created_at", "")), reverse=False)
+        filtered.sort(key=lambda x: (0 if x.get("status") == "未处理" else 1, x.get("ticket_id", "")), reverse=False)
 
         for t in filtered:
             if "created_at" not in t:

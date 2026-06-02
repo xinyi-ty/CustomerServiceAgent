@@ -74,18 +74,6 @@ def _generate_ticket_id() -> str:
     return f"CS-{date_str}-{pseudo_seq}"
 
 
-def _check_warranty_status(ocr_text: str, sn_code: Optional[str]) -> str:
-    if not sn_code:
-        match = re.search(r"SN[:\s]*([A-Za-z0-9\-]+)", ocr_text, re.IGNORECASE)
-        if match:
-            sn_code = match.group(1)
-    if not sn_code:
-        return "Unknown"
-    if sn_code.startswith("2023") or sn_code.startswith("2024") or sn_code.startswith("2025"):
-        return "In_Warranty"
-    return "Out_of_Warranty"
-
-
 def _clean_llm_response(raw_content: str) -> str:
     """深度清洗大模型返回的脏数据（如 <think> 标签、Markdown 标记）"""
     if not raw_content:
@@ -115,9 +103,8 @@ def _call_llm_api(user_message: str) -> dict:
             {"role": "system", "content": SYSTEM_PROMPT},
             {"role": "user", "content": user_message},
         ],
-        temperature=0.2,
-        max_tokens=1024,
-        response_format={"type": "json_object"}
+        temperature=0.5,
+        max_tokens=3072,
     )
 
     raw_content = response.choices[0].message.content or ""
@@ -138,13 +125,25 @@ def _call_llm_api(user_message: str) -> dict:
         raise e  # 抛出异常触发 tenacity 重试
 
 
-def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
+def call_llm(user_text: str, ocr_text: str = "", sop_context: str = "", product_context: str = "") -> Dict[str, Any]:
     user_message = f"【客户投诉内容】\n{user_text}"
     if ocr_text:
         user_message += f"\n\n【图片/视频 OCR 识别结果】\n{ocr_text}"
+    if product_context:
+        user_message += f"\n\n{product_context}"
+    if sop_context:
+        user_message += f"\n\n【企业 SOP 知识库参考内容】\n{sop_context}\n\n请基于以上 SOP 知识库内容，结合客户投诉信息进行分析和回复。"
 
     real_ticket_id = _generate_ticket_id()
     user_message += f"\n\n【系统指令】请使用此工单ID: {real_ticket_id}"
+
+    user_message += """
+
+【重要输出要求】
+请严格按照上述系统提示词的 JSON 格式输出，不要包含任何额外的文字、注释、Markdown 代码块标记。
+auto_reply_sent 字段需要输出完整且专业的回复内容，包含致谢、问题确认、具体处置建议（或 SOP 指导），不少于 80 个字。"""
+
+    logger.info(f"[INFO] LLM 请求: model={LLM_MODEL_NAME}, user_text_len={len(user_text)}, ocr_text_len={len(ocr_text)}, sop_context_len={len(sop_context)}, product_context_len={len(product_context)}")
 
     default_result = {
         "ticket_id": real_ticket_id,
@@ -163,12 +162,11 @@ def call_llm(user_text: str, ocr_text: str = "") -> Dict[str, Any]:
         raw_json_dict = _call_llm_api(user_message)
         raw_json_dict["ticket_id"] = real_ticket_id
 
-        extracted_sn = raw_json_dict.get("extracted_data", {}).get("sn_code")
-        warranty_status = _check_warranty_status(ocr_text, extracted_sn)
-        if "agent_business_assessment" in raw_json_dict:
-            raw_json_dict["agent_business_assessment"]["warranty_status"] = warranty_status
+        # 质保校验已移至 chat_router.py 统一调用 warranty.py，此处不再进行简单前缀校验
+        # warranty_status 由 chat_router.py 中的 ERP 校验或本地模拟逻辑写入
 
         validated_ticket = TicketSchema(**raw_json_dict)
+        logger.info(f"[INFO] LLM 响应成功: ticket={real_ticket_id}, urgency={validated_ticket.agent_business_assessment.urgency_level.value}, reply_len={len(validated_ticket.auto_reply_sent)}")
         return validated_ticket.model_dump(mode="json")
 
     except Exception as e:

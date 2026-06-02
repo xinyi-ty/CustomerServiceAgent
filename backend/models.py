@@ -12,10 +12,10 @@ from datetime import datetime
 # 1. 核心枚举定义 (强校验，拦截大模型幻觉)
 # ==========================================
 class UrgencyLevel(str, Enum):
-    """紧急度级别 (严格对应赛事路由矩阵)"""
-    LOW = "Low"
-    MEDIUM = "Medium"
-    HIGH = "High"
+    """紧急度级别 (严格对应赛事路由矩阵，全小写以对齐 LLM prompt 输出格式)"""
+    LOW = "low"
+    MEDIUM = "medium"
+    HIGH = "high"
 
 class WarrantyStatus(str, Enum):
     """质保状态 (赛事加分项：OCR 核验结果)"""

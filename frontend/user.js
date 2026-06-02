@@ -2,7 +2,7 @@
 const chatMessages = document.getElementById('chatMessages');
 const chatInput = document.getElementById('chatInput');
 const sendBtn = document.getElementById('sendBtn');
-const chatImage = document.getElementById('chatImage');
+const chatFile = document.getElementById('chatFile');
 const fileLabel = document.getElementById('fileLabel');
 const filePreview = document.getElementById('filePreview');
 const newChatBtn = document.getElementById('newChatBtn');
@@ -11,10 +11,6 @@ const backBtn = document.getElementById('backToWelcome');
 const userSearchInput = document.getElementById('userSearchTicket');
 const userSearchBtn = document.getElementById('userSearchBtn');
 const searchResultDiv = document.getElementById('searchResult');
-
-const collapseHeader = document.getElementById('collapseHeader');
-const collapseContent = document.getElementById('collapseContent');
-const collapseIcon = document.getElementById('collapseIcon');
 
 // ======================== 状态管理 ========================
 const API_BASE = 'http://localhost:8000';
@@ -98,7 +94,6 @@ function addAssistantMessageWithThinking(fullRawText, extra = {}) {
     return { messageDiv, replyText: reply };
 }
 
-// 修复：使用 textContent 逐字追加，避免 HTML 实体解析导致的闪烁
 async function typeTextToReplyContainer(messageDiv, text, speed = 15) {
     const replyContainer = messageDiv.querySelector('.reply-content');
     if (!replyContainer) return;
@@ -165,6 +160,13 @@ async function searchUserTicket() {
     }
 }
 
+// ======================== 发送按钮状态 ========================
+function updateSendButton() {
+    const hasText = chatInput.value.trim().length > 0;
+    const hasFile = currentFile !== null;
+    sendBtn.disabled = !(hasText || hasFile);
+}
+
 // ======================== 核心发送逻辑 ========================
 async function sendMessage() {
     const userText = chatInput.value.trim();
@@ -180,10 +182,10 @@ async function sendMessage() {
     chatInput.value = '';
     if (fileToSend) {
         currentFile = null;
-        chatImage.value = '';
+        chatFile.value = '';
         filePreview.innerHTML = '';
     }
-    sendBtn.disabled = true;
+    updateSendButton();
     showThinkingIndicator();
 
     try {
@@ -214,23 +216,28 @@ async function sendMessage() {
         hideThinkingIndicator();
         addMessage('assistant', '系统异常：服务暂时不可用，请稍后再试或联系人工客服。');
     } finally {
-        sendBtn.disabled = false;
+        updateSendButton();
         chatInput.focus();
     }
 }
 
 // ======================== 事件绑定 ========================
-fileLabel.addEventListener('click', () => chatImage.click());
-chatImage.addEventListener('change', () => {
-    const file = chatImage.files[0];
+chatInput.addEventListener('input', updateSendButton);
+updateSendButton();
+
+fileLabel.addEventListener('click', () => chatFile.click());
+chatFile.addEventListener('change', () => {
+    const file = chatFile.files[0];
     if (!file) return;
     if (file.size > 50 * 1024 * 1024) {
         alert('文件大小不能超过 50MB');
-        chatImage.value = '';
+        chatFile.value = '';
         return;
     }
     currentFile = file;
-    filePreview.innerHTML = `已选择文件：${file.name}`;
+    const fileType = file.type.startsWith('video/') ? '[视频]' : '[图片]';
+    filePreview.innerHTML = `${fileType} ${file.name}`;
+    updateSendButton();
 });
 
 newChatBtn.addEventListener('click', () => {
@@ -241,6 +248,7 @@ newChatBtn.addEventListener('click', () => {
         <div class="message assistant">
             <div class="bubble">您好，新会话已建立。<br>请描述您的设备故障或上传相关凭证。</div>
         </div>`;
+    updateSendButton();
 });
 
 backBtn.addEventListener('click', () => window.location.href = 'welcome.html');
@@ -252,10 +260,4 @@ chatInput.addEventListener('keydown', (e) => {
         e.preventDefault();
         sendMessage();
     }
-});
-
-// 初始化折叠状态
-collapseHeader.addEventListener('click', () => {
-    collapseContent.classList.toggle('collapsed');
-    collapseIcon.classList.toggle('collapsed');
 });

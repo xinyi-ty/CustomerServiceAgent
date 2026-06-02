@@ -294,3 +294,35 @@ def get_sop_guide(
                 return f"[ERROR] LLM 生成回复失败: {e}"
 
     return "[ERROR] LLM 生成回复失败：超过最大重试次数。"
+
+
+def search_sop(query: str, top_k: int = 3) -> str:
+    """
+    不依赖分类标签的 SOP 纯文本检索。
+    在 LLM 调用前使用，将检索结果注入 LLM 上下文，让 Agent 基于 SOP 知识生成回复。
+    """
+    if not query or not query.strip():
+        return ""
+    try:
+        query_embedding = _get_embedding(query.strip())
+    except Exception as e:
+        print(f"[ERROR] SOP 检索向量化失败: {e}")
+        return ""
+    collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
+    try:
+        results = collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k,
+            include=["documents", "metadatas"]
+        )
+    except Exception as e:
+        print(f"[ERROR] SOP 向量检索失败: {e}")
+        return ""
+    context_parts = []
+    if results and results['documents'] and results['documents'][0]:
+        for i, doc in enumerate(results['documents'][0]):
+            source = results['metadatas'][0][i].get('source', 'Unknown') if results.get('metadatas') else 'Unknown'
+            context_parts.append(f"[参考片段 {i + 1} (来源: {source})]:\n{doc}")
+    if not context_parts:
+        return ""
+    return "\n\n".join(context_parts)

@@ -108,7 +108,13 @@
     }
 
     /* 工单查询区 */
-    .search-section { margin-bottom: 24px; }
+    .search-section {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
     .search-box {
       display: flex; gap: 8px; margin-bottom: 10px;
     }
@@ -137,12 +143,13 @@
     .search-btn:hover { opacity: 0.9; }
 
     .search-result {
-      max-height: 150px;
+      flex: 1;
       overflow-y: auto;
       display: flex;
       flex-direction: column;
       gap: 8px;
       font-size: 12px;
+      min-height: 0;
     }
     .search-result::-webkit-scrollbar { width: 4px; }
     .search-result::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -154,39 +161,6 @@
       border-radius: 10px;
       border: 1px solid var(--border);
       box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-    }
-
-    /* 历史会话折叠区 */
-    .history-section { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
-    .collapse-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 10px 8px;
-      cursor: pointer;
-      user-select: none;
-      font-size: 11px; font-weight: 700; color: var(--sub);
-      letter-spacing: 1px; text-transform: uppercase;
-    }
-    .collapse-icon {
-      transition: transform 0.3s;
-      font-size: 10px;
-    }
-    .collapse-icon.collapsed { transform: rotate(-90deg); }
-
-    .collapse-content {
-      flex: 1;
-      overflow-y: auto;
-      transition: max-height 0.3s ease;
-      padding-right: 4px;
-    }
-    .collapse-content.collapsed { display: none; }
-    .collapse-content::-webkit-scrollbar { width: 4px; }
-    .collapse-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-
-    .empty-history {
-      padding: 20px;
-      text-align: center;
-      color: #94a3b8;
-      font-size: 12px;
     }
 
     /* 侧边栏底部 */
@@ -440,6 +414,7 @@
       cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       transition: all 0.2s;
+      font-size: 22px; font-weight: 300; line-height: 1;
     }
     .icon-btn:hover { background: #e2e8f0; color: var(--text); }
 
@@ -496,17 +471,6 @@
         <div id="searchResult" class="search-result"></div>
       </div>
 
-      <!-- 历史会话折叠区 -->
-      <div class="history-section">
-        <div id="collapseHeader" class="collapse-header">
-          <span>历史会话</span>
-          <span id="collapseIcon" class="collapse-icon">▼</span>
-        </div>
-        <div id="collapseContent" class="collapse-content">
-          <div class="empty-history">当前会话进行中...</div>
-        </div>
-      </div>
-
       <div class="sidebar-footer">
         <button id="backToWelcome" class="back-btn">返回首页</button>
       </div>
@@ -535,10 +499,8 @@
         <div class="input-wrapper">
           <textarea id="chatInput" class="input-field" placeholder="描述您的问题，或按 Enter 发送..." rows="1"></textarea>
           <div class="input-actions">
-            <input type="file" id="chatImage" hidden accept="image/*">
-            <button id="fileLabel" class="icon-btn" title="上传图片">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
-            </button>
+            <input type="file" id="chatFile" hidden accept="image/*,video/*">
+            <button id="fileLabel" class="icon-btn" title="上传图片或视频">+</button>
             <button id="sendBtn" class="send-btn" disabled>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
             </button>
