@@ -1,0 +1,101 @@
+[
+  {
+    "sn_code": "SN202501001",
+    "order_id": "JD202606010001",
+    "model_number": "Pro-Max-V2",
+    "batch_code": "BATCH-A01",
+    "production_year": 2025,
+    "production_month": 1,
+    "product_name": "智能变频空调 Pro"
+  },
+  {
+    "sn_code": "SN202509888",
+    "order_id": "JD202605280010",
+    "model_number": "Pro-Max-V2",
+    "batch_code": "BATCH-A01",
+    "production_year": 2025,
+    "production_month": 9,
+    "product_name": "智能变频空调 Pro"
+  },
+  {
+    "sn_code": "SN202510001",
+    "order_id": "JD202605150099",
+    "model_number": "Pro-Max-V2",
+    "batch_code": "BATCH-A02",
+    "production_year": 2025,
+    "production_month": 10,
+    "product_name": "智能变频空调 Pro"
+  },
+  {
+    "sn_code": "SN202301015",
+    "order_id": "TMALL20260515003",
+    "model_number": "X-Basic-100",
+    "batch_code": "BATCH-B03",
+    "production_year": 2023,
+    "production_month": 1,
+    "product_name": "基础取暖器 X100"
+  },
+  {
+    "sn_code": "SN202205678",
+    "order_id": "TMALL202203151234",
+    "model_number": "X-Basic-100",
+    "batch_code": "BATCH-B01",
+    "production_year": 2022,
+    "production_month": 5,
+    "product_name": "基础取暖器 X100"
+  },
+  {
+    "sn_code": "SN202404020",
+    "order_id": "TMALL20240420000",
+    "model_number": "X-Basic-100",
+    "batch_code": "BATCH-B05",
+    "production_year": 2024,
+    "production_month": 4,
+    "product_name": "基础取暖器 X100"
+  },
+  {
+    "sn_code": "SN202607100",
+    "order_id": "PDD202605310020",
+    "model_number": "Eco-Wash-P3",
+    "batch_code": "BATCH-C07",
+    "production_year": 2026,
+    "production_month": 7,
+    "product_name": "全自动滚筒洗衣机 P3"
+  },
+  {
+    "sn_code": "SN202601001",
+    "order_id": "JD202605090055",
+    "model_number": "Eco-Wash-P3",
+    "batch_code": "BATCH-C06",
+    "production_year": 2026,
+    "production_month": 1,
+    "product_name": "全自动滚筒洗衣机 P3"
+  },
+  {
+    "sn_code": "SN202512345",
+    "order_id": "JD202605200101",
+    "model_number": "SmartCook-M1",
+    "batch_code": "BATCH-D02",
+    "production_year": 2025,
+    "production_month": 12,
+    "product_name": "智能电饭煲 M1"
+  },
+  {
+    "sn_code": "SN202603001",
+    "order_id": "JD202605220066",
+    "model_number": "SmartCook-M1",
+    "batch_code": "BATCH-D01",
+    "production_year": 2026,
+    "production_month": 3,
+    "product_name": "智能电饭煲 M1"
+  },
+  {
+    "sn_code": "SN_BAD00",
+    "order_id": "SF202605300888",
+    "model_number": "Pro-Max-V2",
+    "batch_code": "BATCH-A02",
+    "production_year": 0,
+    "production_month": 0,
+    "product_name": "智能变频空调 Pro"
+  }
+]
