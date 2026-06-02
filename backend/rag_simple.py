@@ -12,8 +12,11 @@ RAG (检索增强生成) 核心模块 - 企业级生产版
 import os
 import re
 import time
+import logging
 from typing import List, Dict, Any, Optional, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
+
+logger = logging.getLogger(__name__)
 
 import chromadb
 import dashscope
@@ -101,7 +104,7 @@ def _get_embeddings_batch(texts: List[str]) -> List[List[float]]:
     total_batches = len(batches)
     all_embeddings: List[Optional[List[float]]] = [None] * len(texts)
 
-    print(f"[INFO] |-- 启动多线程并发向量化 (共 {total_batches} 批, 最大并发数 {MAX_WORKERS})")
+    logger.info(f"启动多线程并发向量化 (共 {total_batches} 批, 最大并发数 {MAX_WORKERS})")
 
     def fetch_batch(batch_idx: int, batch_texts: List[str]) -> Tuple[int, List[Dict[str, Any]]]:
         try:
@@ -111,7 +114,7 @@ def _get_embeddings_batch(texts: List[str]) -> List[List[float]]:
             else:
                 raise RuntimeError(f"API 返回错误: {resp.message}")
         except Exception as e:
-            print(f"[ERROR] 批次 {batch_idx + 1} 请求失败: {e}")
+            logger.error(f"批次 {batch_idx + 1} 请求失败: {e}")
             raise e
 
     with ThreadPoolExecutor(max_workers=MAX_WORKERS) as executor:
@@ -128,7 +131,7 @@ def _get_embeddings_batch(texts: List[str]) -> List[List[float]]:
                 global_index = offset + item["text_index"]
                 all_embeddings[global_index] = item["embedding"]
 
-            print(f"[INFO] |-- 批次 {batch_idx + 1}/{total_batches} 处理完成 ({len(batches[batch_idx])} items)")
+            logger.info(f"批次 {batch_idx + 1}/{total_batches} 处理完成 ({len(batches[batch_idx])} items)")
 
     return [emb for emb in all_embeddings if emb is not None]
 
@@ -137,12 +140,12 @@ def _get_embeddings_batch(texts: List[str]) -> List[List[float]]:
 
 def build_index(force_rebuild: bool = False) -> None:
     """读取 data/sop 目录下的文件，构建或更新 ChromaDB 向量索引"""
-    print("\n" + "=" * 60)
-    print("[INFO] RAG Engine: 开始构建知识库向量索引")
-    print("=" * 60)
+    logger.info("=" * 60)
+    logger.info("RAG Engine: 开始构建知识库向量索引")
+    logger.info("=" * 60)
 
     if not os.path.exists(SOP_DIR):
-        print(f"[ERROR] 未找到知识库目录: {SOP_DIR}")
+        logger.error(f"未找到知识库目录: {SOP_DIR}")
         return
 
     if force_rebuild:
@@ -150,11 +153,11 @@ def build_index(force_rebuild: bool = False) -> None:
             existing_collections = [col.name for col in chroma_client.list_collections()]
             if COLLECTION_NAME in existing_collections:
                 chroma_client.delete_collection(COLLECTION_NAME)
-                print(f"[INFO] 已清理历史集合: {COLLECTION_NAME}")
+                logger.info(f"已清理历史集合: {COLLECTION_NAME}")
             else:
-                print(f"[INFO] 集合 {COLLECTION_NAME} 尚未创建，跳过清理。")
+                logger.info(f"集合 {COLLECTION_NAME} 尚未创建，跳过清理。")
         except Exception as e:
-            print(f"[WARN] 清理旧集合时出现异常 (不影响后续构建): {e}")
+            logger.warning(f"清理旧集合时出现异常 (不影响后续构建): {e}")
 
     collection = chroma_client.get_or_create_collection(
         name=COLLECTION_NAME,
@@ -167,14 +170,14 @@ def build_index(force_rebuild: bool = False) -> None:
 
     txt_files = [f for f in os.listdir(SOP_DIR) if f.endswith('.txt')]
     if not txt_files:
-        print(f"[WARN] {SOP_DIR} 目录下未发现 .txt 文件。")
+        logger.warning(f"{SOP_DIR} 目录下未发现 .txt 文件。")
         return
 
     for filename in txt_files:
         filepath = os.path.join(SOP_DIR, filename)
         with open(filepath, 'r', encoding='utf-8') as f:
             content = f.read()
-            print(f"[INFO] |-- 读取文档: {filename} ({len(content)} chars)")
+            logger.info(f"读取文档: {filename} ({len(content)} chars)")
 
             chunks = _chunk_text(content)
             for i, chunk in enumerate(chunks):
@@ -184,10 +187,10 @@ def build_index(force_rebuild: bool = False) -> None:
                 all_metadatas.append({"source": filename, "chunk_index": str(i)})
 
     if not all_chunks:
-        print("[WARN] 未提取到任何有效文本块。")
+        logger.warning("未提取到任何有效文本块。")
         return
 
-    print(f"[INFO] 正在计算 {len(all_chunks)} 个文本块的向量 (Batch API)...")
+    logger.info(f"正在计算 {len(all_chunks)} 个文本块的向量 (Batch API)...")
     embeddings = _get_embeddings_batch(all_chunks)
 
     collection.add(
@@ -197,7 +200,7 @@ def build_index(force_rebuild: bool = False) -> None:
         metadatas=all_metadatas
     )
 
-    print(f"[SUCCESS] 索引构建完成，共入库 {len(all_ids)} 个知识片段。")
+    logger.info(f"索引构建完成，共入库 {len(all_ids)} 个知识片段。")
 
 
 # ================= 4. RAG 检索与生成 =================
@@ -288,7 +291,7 @@ def get_sop_guide(
             if "rate limit" in error_msg and attempt < max_retries - 1:
                 # [优化] 延长重试等待时间，适配严格的 API 网关冷却机制
                 wait_time = 10 * (attempt + 1)  # 递增等待：10s, 20s
-                print(f"[WARN] 触发 LLM API 限流 (Rate Limit)，{wait_time}s 后重试 ({attempt + 1}/{max_retries})...")
+                logger.warning(f"触发 LLM API 限流 (Rate Limit)，{wait_time}s 后重试 ({attempt + 1}/{max_retries})...")
                 time.sleep(wait_time)
             else:
                 return f"[ERROR] LLM 生成回复失败: {e}"
@@ -306,7 +309,7 @@ def search_sop(query: str, top_k: int = 3) -> str:
     try:
         query_embedding = _get_embedding(query.strip())
     except Exception as e:
-        print(f"[ERROR] SOP 检索向量化失败: {e}")
+        logger.error(f"SOP 检索向量化失败: {e}")
         return ""
     collection = chroma_client.get_or_create_collection(name=COLLECTION_NAME)
     try:
@@ -316,7 +319,7 @@ def search_sop(query: str, top_k: int = 3) -> str:
             include=["documents", "metadatas"]
         )
     except Exception as e:
-        print(f"[ERROR] SOP 向量检索失败: {e}")
+        logger.error(f"SOP 向量检索失败: {e}")
         return ""
     context_parts = []
     if results and results['documents'] and results['documents'][0]:

@@ -167,7 +167,7 @@ def update_ticket_status(ticket_id: str, new_status: str) -> bool:
         return False
 
 
-def get_all_tickets(limit: int = 50, offset: int = 0) -> List[Dict[str, Any]]:
+def get_all_tickets(limit: int = 99999, offset: int = 0) -> List[Dict[str, Any]]:
     """获取工单列表 (支持分页，默认按时间倒序)"""
     try:
         with get_db_connection() as conn:

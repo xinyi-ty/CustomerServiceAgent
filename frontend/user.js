@@ -215,7 +215,7 @@ async function sendMessage() {
         const assistantFullReply = data.reply || '抱歉，未获得有效回复。';
 
         // 先渲染气泡（不含工单徽章），等打字动画结束后再追加
-        const { messageDiv, replyText } = addAssistantMessageWithThinking(assistantFullReply, {});
+        const { messageDiv, replyText } = addAssistantMessageWithThinking(assistantFullReply);
         isStreaming = true;
         await typeTextToReplyContainer(messageDiv, replyText, 15);
         isStreaming = false;
@@ -224,7 +224,28 @@ async function sendMessage() {
         if (data.ticket_created) {
             const urg = (data.urgency_level || '').toLowerCase();
             const urgLabel = urg === 'high' ? '紧急' : urg === 'medium' ? '中等' : '普通';
-            const badgeHtml = `<div class="ticket-badge"><span class="badge-dot"></span><span class="badge-text">已创建工单</span><span class="badge-id">${escapeHtml(data.ticket_id)}</span><span class="badge-urg ${urg}"><span class="urg-dot"></span>${urgLabel}</span></div>`;
+            const warrantyStatus = data.warranty_status || '';
+            let wsLabel, wsClass;
+            if (warrantyStatus) {
+                const ws = warrantyStatus.toLowerCase();
+                wsLabel = ws === 'in_warranty' ? '在保' : ws === 'out_of_warranty' ? '过保' : '待核验';
+                wsClass = ws === 'in_warranty' ? 'in' : ws === 'out_of_warranty' ? 'out' : 'unknown';
+            }
+            let snOcrHtml = '';
+            if (data.sn_code) {
+                snOcrHtml += `<div style="font-size:12px;color:var(--sub);margin-top:8px;line-height:1.7;">SN: <strong style="color:var(--text);font-family:monospace;">${escapeHtml(data.sn_code)}</strong>`;
+                if (data.ocr_text) {
+                    const ocrPreview = data.ocr_text.length > 60 ? data.ocr_text.slice(0, 60) + '...' : data.ocr_text;
+                    snOcrHtml += `<br>OCR: ${escapeHtml(ocrPreview)}`;
+                }
+                snOcrHtml += '</div>';
+            }
+            let badgeHtml = snOcrHtml;
+            badgeHtml += `<div class="ticket-badge"><span class="badge-dot"></span><span class="badge-text">已创建工单</span><span class="badge-id">${escapeHtml(data.ticket_id)}</span>`;
+            if (warrantyStatus) {
+                badgeHtml += `<span class="badge-warranty ${wsClass}" style="font-size:10px;padding:1px 6px;border-radius:3px;font-weight:600;background:${wsClass==='in'?'#dcfce7':wsClass==='out'?'#fee2e2':'#f1f5f9'};color:${wsClass==='in'?'#166534':wsClass==='out'?'#991b1b':'#64748b'};">${wsLabel}</span>`;
+            }
+            badgeHtml += `<span class="badge-urg ${urg}"><span class="urg-dot"></span>${urgLabel}</span></div>`;
             const bubble = messageDiv.querySelector('.bubble');
             if (bubble) bubble.insertAdjacentHTML('beforeend', badgeHtml);
         }

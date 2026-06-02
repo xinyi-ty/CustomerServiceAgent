@@ -120,7 +120,7 @@ function renderStats(tickets) {
     var pending = 0;
     var urgent = 0;
     var resolved = 0;
-    for (var i = 0; i < tickets.length; i++) {
+    for (let i = 0; i < tickets.length; i++) {
         var t = tickets[i];
         if (t.status === '已处理' || t.status === '已解决') resolved++;
         else pending++;
@@ -146,7 +146,7 @@ function renderTable(tickets) {
     }
 
     var html = '';
-    for (var i = 0; i < tickets.length; i++) {
+    for (let i = 0; i < tickets.length; i++) {
         var t = tickets[i];
         var assessment = t.agent_business_assessment || {};
         var extracted = t.extracted_data || {};
@@ -253,7 +253,7 @@ function renderTable(tickets) {
     // ---- Bind events ----
     // Row click to toggle expand
     var rows = tableBody.querySelectorAll('.ticket-row');
-    for (var i = 0; i < rows.length; i++) {
+    for (let i = 0; i < rows.length; i++) {
         rows[i].addEventListener('click', function (e) {
             // Don't toggle if click is on a button
             if (e.target.closest('.action-btn')) return;
@@ -263,7 +263,7 @@ function renderTable(tickets) {
 
     // Process button
     var btns = tableBody.querySelectorAll('.action-btn.process');
-    for (var i = 0; i < btns.length; i++) {
+    for (let i = 0; i < btns.length; i++) {
         btns[i].addEventListener('click', async function (e) {
             e.stopPropagation();
             var btn = this;
@@ -276,7 +276,7 @@ function renderTable(tickets) {
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 showToast('工单 ' + id + ' 已处理');
                 // 局部更新：在 cache 中修改状态，重新渲染
-                for (var j = 0; j < ticketsCache.length; j++) {
+                for (let j = 0; j < ticketsCache.length; j++) {
                     if (ticketsCache[j].ticket_id === id) {
                         ticketsCache[j].status = '已处理';
                         break;
@@ -315,9 +315,9 @@ async function loadData() {
 // ===== Event bindings =====
 // Role tabs
 var roleTabs = document.querySelectorAll('.role-tab');
-for (var i = 0; i < roleTabs.length; i++) {
+for (let i = 0; i < roleTabs.length; i++) {
     roleTabs[i].addEventListener('click', function () {
-        for (var j = 0; j < roleTabs.length; j++) roleTabs[j].classList.remove('active');
+        for (let j = 0; j < roleTabs.length; j++) roleTabs[j].classList.remove('active');
         this.classList.add('active');
         currentRole = this.getAttribute('data-role');
         loadData();

@@ -4,10 +4,8 @@
 架构优化：异步非阻塞、安全日期计算、TTL 缓存防 ERP 击穿、Tenacity 重试降级
 """
 import logging
-import os
 from datetime import datetime
 from typing import Optional
-from functools import lru_cache
 from dateutil.relativedelta import relativedelta
 
 import httpx
@@ -112,18 +110,7 @@ async def _fetch_erp_warranty(sn_code: str) -> Optional[WarrantyResult]:
 # ==========================================
 # 4. 核心对外接口 (融合校验 + TTL 缓存)
 # ==========================================
-# 【优化】引入带 TTL 的缓存，防止同一 SN 码在多轮对话中反复击穿 ERP 接口
-@lru_cache(maxsize=1024)
-def _cached_check(sn_code: str) -> WarrantyResult:
-    """
-    注意：lru_cache 只能缓存同步函数。
-    我们在异步接口中通过 asyncio.to_thread 调用此函数，或者在同步上下文中直接调用。
-    为了简化 FastAPI 异步调用，这里我们采用手动缓存字典+时间戳的方式实现异步缓存。
-    """
-    pass
-
-
-# 手动实现异步安全的 TTL 缓存
+# 异步安全的 TTL 缓存，防止同一 SN 码在多轮对话中反复击穿 ERP 接口
 _warranty_cache: dict[str, tuple[float, WarrantyResult]] = {}
 CACHE_TTL_SECONDS = 3600  # 缓存 1 小时
 

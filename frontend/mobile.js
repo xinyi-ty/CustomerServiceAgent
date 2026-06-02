@@ -46,9 +46,9 @@ function showToast(msg, duration) {
 }
 
 // ======================== Tab Switching ========================
-for (var i = 0; i < tabBtns.length; i++) {
+for (let i = 0; i < tabBtns.length; i++) {
   tabBtns[i].addEventListener('click', function () {
-    for (var j = 0; j < tabBtns.length; j++) {
+    for (let j = 0; j < tabBtns.length; j++) {
       tabBtns[j].classList.remove('active');
     }
     this.classList.add('active');
@@ -128,14 +128,13 @@ function addMessage(role, content, extra) {
 
   var bubbleHtml = '<div class="bubble">' + escapeHtml(content);
   if (extra.fileName) {
-    bubbleHtml += '<span class="file-attach">📎 ' + escapeHtml(extra.fileName) + '</span>';
+    bubbleHtml += '<span class="file-attach">' + escapeHtml(extra.fileName) + '</span>';
   }
   if (extra.ticket_id) {
     var urg = (extra.urgency_level || '').toLowerCase();
     var urgLabel = urg === 'high' ? '紧急' : urg === 'medium' ? '中等' : '普通';
     var warrantyStatus = extra.warranty_status || '';
-    var warrantyLabel = '';
-    var warrantyClass = '';
+    let warrantyLabel, warrantyClass;
     if (warrantyStatus) {
       var ws = warrantyStatus.toLowerCase();
       warrantyLabel = ws === 'in_warranty' ? '在保' : ws === 'out_of_warranty' ? '过保' : '待核验';
@@ -182,8 +181,7 @@ function addAssistantMessageWithThinking(fullRawText, extra) {
     var urg = (extra.urgency_level || '').toLowerCase();
     var urgLabel = urg === 'high' ? '紧急' : urg === 'medium' ? '中等' : '普通';
     var warrantyStatus = extra.warranty_status || '';
-    var warrantyLabel = '';
-    var warrantyClass = '';
+    let warrantyLabel, warrantyClass;
     if (warrantyStatus) {
       var ws = warrantyStatus.toLowerCase();
       warrantyLabel = ws === 'in_warranty' ? '在保' : ws === 'out_of_warranty' ? '过保' : '待核验';
@@ -225,7 +223,7 @@ async function typeTextToReplyContainer(messageDiv, text, speed) {
   var replyContainer = messageDiv.querySelector('.reply-content');
   if (!replyContainer) return;
   replyContainer.textContent = '';
-  for (var i = 0; i < text.length; i++) {
+  for (let i = 0; i < text.length; i++) {
     if (!isStreaming) break;
     replyContainer.textContent += text[i];
     chatMessages.scrollTop = chatMessages.scrollHeight;
@@ -291,21 +289,9 @@ async function sendMessage() {
     var data = await res.json();
     hideThinkingIndicator();
 
-    // Extract warranty_status from the response if available
-    var extra = {};
-    if (data.ticket_created) {
-      extra.ticket_id = data.ticket_id;
-      extra.urgency_level = data.urgency_level;
-      // warranty_status may not be in the ChatResponse model directly,
-      // but we can include it if present
-      if (data.warranty_status) {
-        extra.warranty_status = data.warranty_status;
-      }
-    }
-
     var assistantFullReply = data.reply || '抱歉，未获得有效回复。';
 
-    var result = addAssistantMessageWithThinking(assistantFullReply, {});
+    var result = addAssistantMessageWithThinking(assistantFullReply);
     isStreaming = true;
     await typeTextToReplyContainer(result.messageDiv, result.replyText, 12);
     isStreaming = false;
@@ -314,20 +300,25 @@ async function sendMessage() {
     if (data.ticket_created) {
       var urg = (data.urgency_level || '').toLowerCase();
       var urgLabel = urg === 'high' ? '紧急' : urg === 'medium' ? '中等' : '普通';
-      var warrantyStatus = extra.warranty_status || '';
-      var warrantyLabel = '';
-      var warrantyClass = '';
-      if (warrantyStatus) {
-        var ws = warrantyStatus.toLowerCase();
-        warrantyLabel = ws === 'in_warranty' ? '在保' : ws === 'out_of_warranty' ? '过保' : '待核验';
-        warrantyClass = ws === 'in_warranty' ? 'in' : ws === 'out_of_warranty' ? 'out' : 'unknown';
+      var warrantyStatus = data.warranty_status || '';
+      var badgeHtml = '<div style="margin-top:10px;font-size:11px;color:var(--sub);line-height:1.6;">';
+      if (data.sn_code) {
+        badgeHtml += 'SN: <strong style="color:var(--text);font-family:monospace;">' + escapeHtml(data.sn_code) + '</strong><br>';
       }
-      var badgeHtml = '<div class="ticket-badge">' +
+      if (data.ocr_text) {
+        var ocrPreview = data.ocr_text.length > 60 ? data.ocr_text.slice(0, 60) + '...' : data.ocr_text;
+        badgeHtml += 'OCR: ' + escapeHtml(ocrPreview) + '<br>';
+      }
+      badgeHtml += '</div>';
+
+      badgeHtml += '<div class="ticket-badge">' +
         '<span class="badge-dot"></span>' +
         '<span class="badge-text">已创建工单</span>' +
         '<span class="badge-id">' + escapeHtml(data.ticket_id) + '</span>';
       if (warrantyStatus) {
-        badgeHtml += '<span class="badge-warranty ' + warrantyClass + '">' + warrantyLabel + '</span>';
+        var wsLevel = warrantyStatus.toLowerCase();
+        var wLabel = wsLevel === 'in_warranty' ? '在保' : wsLevel === 'out_of_warranty' ? '过保' : '待核验';
+        badgeHtml += '<span class="badge-warranty ' + wsLevel.replace('_', '-') + '">' + wLabel + '</span>';
       }
       badgeHtml += '<span class="badge-urg ' + urg + '"><span class="urg-dot"></span>' + urgLabel + '</span></div>';
       var bubble = result.messageDiv.querySelector('.bubble');
@@ -371,7 +362,7 @@ function renderTickets(tickets) {
   ticketCount.textContent = '共 ' + tickets.length + ' 条';
 
   var html = '';
-  for (var i = 0; i < tickets.length; i++) {
+  for (let i = 0; i < tickets.length; i++) {
     var t = tickets[i];
     var assessment = t.agent_business_assessment || {};
     var extracted = t.extracted_data || {};
@@ -395,7 +386,7 @@ function renderTickets(tickets) {
 
     // Evidence count
     var evCount = Array.isArray(extracted.evidence_images) ? extracted.evidence_images.length : 0;
-    var evHtml = evCount > 0 ? '<span style="font-size:11px;color:var(--sub);">📎 ' + evCount + ' 个附件</span>' : '';
+    var evHtml = evCount > 0 ? '<span style="font-size:11px;color:var(--sub);">' + evCount + ' 个附件</span>' : '';
 
     // Detail rows
     var orderId = extracted.order_id || '--';
@@ -440,7 +431,7 @@ function renderTickets(tickets) {
 
   // Bind expand toggle
   var items = ticketList.querySelectorAll('.ticket-item');
-  for (var i = 0; i < items.length; i++) {
+  for (let i = 0; i < items.length; i++) {
     items[i].addEventListener('click', function () {
       this.classList.toggle('expanded');
     });
@@ -465,7 +456,7 @@ async function searchTicket() {
     renderTickets(tickets);
     // Highlight matched
     var idEls = document.querySelectorAll('.ticket-id');
-    for (var k = 0; k < idEls.length; k++) {
+    for (let k = 0; k < idEls.length; k++) {
       if (idEls[k].textContent.indexOf(ticketId) !== -1) {
         idEls[k].style.color = '#2563eb';
         idEls[k].style.fontWeight = '800';

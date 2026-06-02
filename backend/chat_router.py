@@ -23,7 +23,7 @@ router = APIRouter()
 
 @router.post("/chat", response_model=ChatResponse)
 async def chat_endpoint(
-        message: str = Form(...),  # 用户输入的文本问题 (必填)
+        message: str = Form(""),  # 用户输入的文本问题 (允许为空)
         session_id: str = Form(""),  # 会话 ID (用于追踪上下文)
         history: str = Form("[]"),  # 历史对话记录 (JSON 字符串)
         image: Optional[UploadFile] = File(None)  # 用户上传的多模态凭证 (图片/视频，选填)
@@ -161,8 +161,9 @@ async def chat_endpoint(
             )
 
         # ================= 7. ERP 质保校验 =================
-        # 优先使用 LLM 从文本中提取的 SN 码，如果没有则使用 OCR 从图片中识别的 SN 码
-        sn_code = extracted_data.get("sn_code") or sn_from_ocr
+        # SN 码优先级：OCR 直接从铭牌识别的结果优先于 LLM 从文本推断的结果
+        # OCR 看到的是实物铭牌，比 LLM 从口语文本中推断更可靠
+        sn_code = sn_from_ocr or extracted_data.get("sn_code")
         warranty_status = "Unknown"
         if sn_code:
             try:
@@ -206,7 +207,9 @@ async def chat_endpoint(
             ticket_created=True,
             ticket_id=ticket_id,
             urgency_level=UrgencyLevel(urgency_level),  # 使用枚举类型确保数据规范
-            warranty_status=warranty_status  # 质保核验状态，前端展示加分项
+            warranty_status=warranty_status,  # 质保核验状态，前端展示加分项
+            sn_code=sn_code,  # 识别的SN码（OCR优先于LLM）
+            ocr_text=ocr_text[:200] if ocr_text else None  # OCR原文摘要
         )
 
     except Exception as e:

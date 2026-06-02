@@ -15,8 +15,8 @@ chromadb>=0.4.22
 dashscope>=1.14.0
 
 # ================= 多模态 OCR =================
-paddlepaddle
-paddleocr
+paddlepaddle==3.0.0
+paddleocr>=2.8.0,<3.0
 
 # ================= 图像/视频处理 =================
 numpy

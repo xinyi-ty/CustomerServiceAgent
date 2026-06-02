@@ -58,7 +58,8 @@ async def process_ticket(ticket_id: str):
 @app.get("/history")
 async def history(
         role: str = Query(None, description="角色: frontline, manager, general"),
-        ticket_id: str = Query(None, description="工单号（支持部分匹配）")
+        ticket_id: str = Query(None, description="工单号（支持部分匹配）"),
+        limit: int = Query(99999, description="返回条数上限")
 ):
     try:
         if role == "frontline":
@@ -68,7 +69,7 @@ async def history(
         elif role == "general":
             base_tickets = get_tickets_by_urgency("high")
         else:
-            base_tickets = get_all_tickets()
+            base_tickets = get_all_tickets(limit=limit)
 
         if ticket_id:
             filtered = [t for t in base_tickets if ticket_id.lower() in t.get("ticket_id", "").lower()]
