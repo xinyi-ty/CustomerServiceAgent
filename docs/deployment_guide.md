@@ -22,7 +22,7 @@
 
 | 软件 | 版本要求 | 说明 |
 |------|---------|------|
-| Python | 3.10 - 3.12 | 推荐 3.11 |
+| Python | 3.10 - 3.13 | 推荐 3.11 |
 | 浏览器 | Chrome 90+ / Edge 90+ | 前端界面访问 |
 
 ---
@@ -65,7 +65,7 @@ CustomerServiceAgent/
 
 ---
 
-## 三、部署步骤
+## 三、部署步骤(文件用的是cmd)
 
 ### 3.1 获取代码
 
@@ -85,10 +85,12 @@ venv\Scripts\activate
 ### 3.3 安装依赖
 
 ```bash
-pip install -r requirements.txt
+cd backend
+pip install -r requirements.txt 
 ```
 
 > **注意**：PaddlePaddle + PaddleOCR 安装包较大（约 200MB）。如果安装缓慢，可使用清华镜像：
+>
 > ```bash
 > pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 > ```
@@ -98,7 +100,8 @@ pip install -r requirements.txt
 复制环境变量模板并填写：
 
 ```bash
-cp backend\.env.example backend\.env
+cd backend
+cp .env.example .env
 ```
 
 编辑 `backend\.env`，填入以下必填项：
@@ -192,18 +195,19 @@ Mock 服务器支持以下测试场景：
 ```bash
 curl http://localhost:8000/health
 ```
+>需保证main.py已启动
 
 预期响应：
 ```json
 {"status": "ok", "rag_available": true}
 ```
 
-### 4.2 验收场景测试
+### 4.2 验收场景测试(也可通过前端界面测试)
 
 #### 场景 A：简单配件缺失（低紧急度）
 
 ```bash
-curl -X POST http://localhost:8000/chat \
+curl -X POST http://localhost:8000/chat ^
   -F "message=我收到的产品少了一个螺丝，怎么补发？"
 ```
 
@@ -215,7 +219,7 @@ curl -X POST http://localhost:8000/chat \
 #### 场景 B：设备冒烟（高紧急度）
 
 ```bash
-curl -X POST http://localhost:8000/chat \
+curl -X POST http://localhost:8000/chat ^
   -F "message=机器后面冒黑烟了，很烫！"
 ```
 
@@ -227,8 +231,9 @@ curl -X POST http://localhost:8000/chat \
 #### 场景 C：上传图片识别 SN 码
 
 ```bash
-curl -X POST http://localhost:8000/chat \
-  -F "message=帮我看下这个SN码" \
+curl -X POST http://localhost:8000/chat ^
+  -F "message=帮我看下这个SN码" ^
+  -F "image=@C:\Users\30146\OneDrive\桌面\微信图片_20260602145453_146_2.png"
   -F "image=@图片路径.jpg"
 ```
 
