@@ -23,7 +23,6 @@
 | 软件 | 版本要求 | 说明 |
 |------|---------|------|
 | Python | 3.10 - 3.12 | 推荐 3.11 |
-| Git | 最新稳定版 | 用于版本管理（可选） |
 | 浏览器 | Chrome 90+ / Edge 90+ | 前端界面访问 |
 
 ---
@@ -32,52 +31,50 @@
 
 ```
 CustomerServiceAgent/
-├── backend/                 # 后端服务（FastAPI）
-│   ├── main.py              # 应用入口 + API 路由
-│   ├── chat_router.py       # 核心客诉处理接口
-│   ├── llm_client.py        # LLM 大模型调用客户端
-│   ├── rag_simple.py        # RAG 检索增强生成模块
-│   ├── ocr_utils.py         # 多模态 OCR 处理（图片/视频）
-│   ├── warranty.py          # 质保期校验模块（ERP + 本地模拟）
-│   ├── database.py          # SQLite 数据库操作
-│   ├── models.py            # Pydantic 数据模型定义
-│   ├── config.py            # 全局配置模块
-│   ├── prompt.txt           # LLM 系统提示词
-│   ├── mock_erp_server.py   # 模拟 ERP 服务器（仅开发调试用）
-│   ├── data/
-│   │   ├── sop/
-│   │   │   └── sop_document.txt   # SOP 知识库文档
-│   │   └── tickets.db              # SQLite 数据库（运行时生成）
-│   ├── uploads/             # 上传文件存储目录（运行时生成）
-│   ├── chroma_db/           # ChromaDB 向量数据库（运行时生成）
-│   └── .env                 # 环境变量配置文件
-├── frontend/                # 前端界面
-│   ├── welcome.html         # 欢迎页/入口
-│   ├── user.html            # 客户端聊天页面
-│   ├── user.js              # 客户端逻辑
-│   ├── mobile.html          # 移动端 H5 页面（加分项）
-│   ├── mobile.js            # 移动端逻辑
-│   ├── admin.html           # 管理者看板
-│   └── admin.js             # 管理者看板逻辑
-├── docs/                    # 文档目录
-│   ├── agent_routing.md     # Agent 路由分发与定级逻辑说明
-│   └── deployment_guide.md  # 本文件（部署手册）
-├── requirements.txt         # Python 依赖清单
-└── .gitignore               # Git 忽略配置
+├── backend/                          # 后端服务（FastAPI）
+│   ├── main.py                       # 应用入口 + API 路由
+│   ├── chat_router.py                # 核心客诉处理接口
+│   ├── config.py                     # 全局配置模块
+│   ├── models.py                     # Pydantic 数据模型
+│   ├── database.py                   # SQLite 数据库操作
+│   ├── llm_client.py                 # LLM 大模型调用
+│   ├── prompt.txt                    # LLM 系统提示词
+│   ├── rag_simple.py                 # RAG 检索增强生成
+│   ├── ocr_utils.py                  # 多模态 OCR（图片/视频）
+│   ├── product_lookup.py             # 产品注册表查询
+│   ├── warranty.py                   # 质保期校验
+│   ├── seed_data.py                  # 测试数据种子脚本
+│   ├── mock_erp_server.py            # 模拟 ERP 服务器（调试用）
+│   ├── requirements.txt              # Python 依赖清单
+│   ├── .env.example                  # 环境变量模板
+│   ├── .env                          # 环境变量（需自行创建）
+│   └── data/                         # 运行时数据
+│       ├── sop/sop_document.txt      #  SOP 知识库文档
+│       ├── products.json             #  产品注册表
+│       ├── chroma_db/                #  RAG 向量数据库
+│       └── tickets.db                #  工单数据库
+├── frontend/                         # 前端界面
+│   ├── welcome.html                  #  欢迎页
+│   ├── user.html + user.js           #  用户端（PC 聊天页面）
+│   ├── admin.html + admin.js         #  管理端（工单看板）
+│   ├── mobile.html + mobile.js       #  移动端 H5 页面
+│   └── style.css                     #  全局样式
+├── docs/                             # 文档
+│   ├── agent_routing.md              #  Agent 路由定级说明
+│   ├── deployment_guide.md           #  本文件（部署手册）
+│   └── INTERFACE_multimodal.md       #  多模态接口规范
+├── 赛事要求.docx                     # 比赛需求文档
+└── .gitignore
 ```
 
 ---
 
 ## 三、部署步骤
 
-### 3.1 克隆 / 获取代码
+### 3.1 获取代码
 
 ```bash
-# 如果使用 Git
-git clone <仓库地址>
-cd CustomerServiceAgent
-
-# 或者直接解压源码包
+# 直接使用源码目录（或解压压缩包）
 cd CustomerServiceAgent
 ```
 
@@ -95,59 +92,40 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-> **注意**：PaddleOCR + PaddlePaddle 安装包较大（约 200MB），首次安装可能需要较长时间。  
-> 如果不需要 OCR 功能，可移除此两项依赖，系统仍可处理纯文本客诉。
+> **注意**：PaddlePaddle + PaddleOCR 安装包较大（约 200MB）。如果安装缓慢，可使用清华镜像：
+> ```bash
+> pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+> ```
 
-### 3.4 配置文件
+### 3.4 配置环境变量
 
 复制环境变量模板并填写：
 
 ```bash
-# backend/.env 文件内容
-ENV=development
-
-# ========== 阿里云千问 API（用于 Embedding / RAG 向量检索）==========
-DASHSCOPE_API_KEY=your_dashscope_api_key_here
-
-# ========== 大模型 API（用于对话生成）==========
-# 支持任何兼容 OpenAI API 格式的服务（Qwen、DeepSeek、GLM 等）
-LLM_API_KEY=your_llm_api_key_here
-LLM_BASE_URL=https://your-llm-service.com/v1
-LLM_MODEL_NAME=your-model-name
-
-# ========== 数据库与存储 ==========
-DATABASE_PATH=./data/tickets.db
-UPLOAD_DIR=./uploads
-
-# ========== ERP 系统配置（可选，用于质保核验）==========
-# 留空则降级为本地 SN 码规则模拟
-ERP_API_URL=http://127.0.0.1:8001
-ERP_API_KEY=mock_secret_token_123
-
-# ========== 服务配置 ==========
-HOST=0.0.0.0
-PORT=8000
+cp backend\.env.example backend\.env
 ```
 
-#### API 密钥获取指南
+编辑 `backend\.env`，填入以下必填项：
 
-| 服务 | 用途 | 获取方式 |
+| 变量 | 说明 | 获取方式 |
 |------|------|---------|
-| DashScope API Key | SOP 知识库向量化（Embedding） | [阿里云百炼控制台](https://bailian.console.aliyun.com/) |
-| LLM API Key | 客诉分析与回复生成 | [通义千问](https://tongyi.aliyun.com/) / [DeepSeek](https://platform.deepseek.com/) 等 |
+| `LLM_API_KEY` | 大模型 API 密钥 | [DeepSeek](https://platform.deepseek.com/) / [阿里云百炼](https://bailian.console.aliyun.com/) |
+| `DASHSCOPE_API_KEY` | RAG 向量化密钥 | [阿里云百炼控制台](https://bailian.console.aliyun.com/) |
 
 ### 3.5 准备 SOP 知识库
 
-将企业 SOP 文档以 UTF-8 编码的 `.txt` 格式放入 `backend/data/sop/` 目录。
+系统已内置示例 SOP 文档 `backend/data/sop/sop_document.txt`，包含完整的十大类故障处置细则。可替换为真实企业 SOP。
 
-系统已内置示例 SOP 文档 `sop_document.txt`，包含完整的十大类故障处置细则。**可替换为真实企业 SOP**。
+### 3.6 初始化数据库与种子数据（可选）
 
-SOP 文件格式要求：
-- UTF-8 编码
-- `.txt` 后缀
-- 建议按章节组织，系统会自动分块索引
+首次运行建议执行种子数据脚本来初始化数据库并写入测试数据：
 
-### 3.6 启动服务
+```bash
+cd backend
+python seed_data.py
+```
+
+### 3.7 启动服务
 
 #### 启动主服务
 
@@ -157,13 +135,6 @@ python main.py
 ```
 
 服务默认运行在 `http://localhost:8000`
-
-查看启动日志确认：
-```
-[INFO] 数据库初始化完成 (含 WAL 模式、ticket_sequences 序列表、status 列及索引)
-[INFO] RAG 向量库已就绪，共 N 个片段
-[INFO] AI 售后主服务启动完成
-```
 
 #### 启动 Mock ERP 服务器（可选）
 
@@ -175,20 +146,19 @@ python mock_erp_server.py
 
 Mock ERP 运行在 `http://127.0.0.1:8001`
 
-> 仅在 .env 中配置了 `ERP_API_URL=http://127.0.0.1:8001` 时使用。
+> 仅当 `.env` 中配置了 `ERP_API_URL=http://127.0.0.1:8001` 时有效。
 > 未配置则自动降级为本地 SN 码规则模拟。
 
-### 3.7 访问前端
+### 3.8 访问前端
 
 | 页面 | 地址 | 说明 |
 |------|------|------|
 | 欢迎页 | `frontend/welcome.html` | 系统入口，可跳转用户端和管理端 |
-| 用户端 | `frontend/user.html` | 客户提交客诉的主界面 |
+| 用户端 | `frontend/user.html` | 客户提交客诉的主界面（PC端） |
 | 管理端 | `frontend/admin.html` | 工单看板（按角色过滤） |
 | 移动端 | `frontend/mobile.html` | 移动端 H5 页面 |
 
 > 前端页面通过 HTTP 协议访问后端 API，需确保 `http://localhost:8000` 可访问。
-> 可直接在浏览器中打开 HTML 文件，或用任意 HTTP 服务器托管。
 
 ---
 
@@ -231,6 +201,18 @@ curl -X POST http://localhost:8000/chat \
 - `routing_decision`: `general_manager_dashboard`
 - 回复以安全提醒（切断电源）开头
 
+#### 场景 C：上传图片识别 SN 码
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -F "message=帮我看下这个SN码" \
+  -F "image=@图片路径.jpg"
+```
+
+预期行为：
+- `sn_code`: 返回识别的序列号
+- `warranty_status`: 质保状态（In_Warranty / Out_of_Warranty）
+
 ### 4.3 查看工单管理端
 
 打开 `frontend/admin.html`，可按角色过滤工单：
@@ -247,13 +229,13 @@ curl -X POST http://localhost:8000/chat \
 | 变量名 | 必需 | 默认值 | 说明 |
 |--------|------|--------|------|
 | `LLM_API_KEY` | ✅ | — | 大模型 API 密钥 |
-| `LLM_BASE_URL` | — | 见 config.py | 大模型服务地址 |
-| `LLM_MODEL_NAME` | — | 见 config.py | 大模型名称 |
-| `DASHSCOPE_API_KEY` | ✅ | — | RAG 向量化 API 密钥 |
-| `HOST` | — | 0.0.0.0 | 服务监听地址 |
-| `PORT` | — | 8000 | 服务监听端口 |
-| `DATABASE_PATH` | — | ./data/tickets.db | 数据库路径 |
-| `UPLOAD_DIR` | — | ./uploads | 上传目录 |
+| `LLM_BASE_URL` | — | `https://api.deepseek.com/v1` | 大模型服务地址 |
+| `LLM_MODEL_NAME` | — | `deepseek-chat` | 大模型名称 |
+| `DASHSCOPE_API_KEY` | ✅ | — | RAG 向量化 API 密钥（阿里云百炼） |
+| `HOST` | — | `0.0.0.0` | 服务监听地址 |
+| `PORT` | — | `8000` | 服务监听端口 |
+| `DATABASE_PATH` | — | `./data/tickets.db` | 数据库路径 |
+| `UPLOAD_DIR` | — | `./uploads` | 上传目录 |
 | `ERP_API_URL` | — | — | ERP 接口地址（可选） |
 | `ERP_API_KEY` | — | — | ERP 接口密钥（可选） |
 
@@ -266,100 +248,40 @@ LLM_BASE_URL=https://api.another-service.com/v1
 LLM_MODEL_NAME=model-name
 ```
 
-支持的服务包括但不限于：
-- 通义千问 (Qwen)
-- DeepSeek
-- Kimi
-- 智谱 GLM
-- OpenAI GPT（需海外网络）
+支持的模型包括：DeepSeek、Qwen（通义千问）、GLM（智谱）、Kimi 等。
 
 ### 5.3 更换 OCR 引擎
 
-`ocr_utils.py` 当前使用 PaddleOCR，可替换为：
-- EasyOCR（更轻量）
-- 云 API（如阿里云文字识别）
-- Tesseract OCR
+当前默认使用 PaddleOCR，可替换为 EasyOCR、阿里云文字识别 API 等轻量方案。
 
 ---
 
-## 六、故障排除
+## 六、重新构建 RAG 索引
 
-### 6.1 启动失败
+更新了 SOP 知识库后，需要重新构建向量索引：
 
-| 错误信息 | 可能原因 | 解决方案 |
-|---------|---------|---------|
-| "LLM_API_KEY 未设置" | .env 文件缺失或未配置 | 创建 .env 文件并填入 API Key |
-| "DASHSCOPE_API_KEY 未设置" | RAG 密钥未配置 | 同上 |
-| "ImportError: No module named 'paddleocr'" | OCR 依赖未安装 | `pip install paddlepaddle paddleocr` |
-| "Address already in use" | 端口被占用 | 修改 .env 中 PORT 为其他值 |
+```bash
+python -c "from rag_simple import build_index; build_index(force_rebuild=True)"
+```
 
-### 6.2 运行时问题
+> 注意：`force_rebuild=True` 会清空并重建索引。
 
-| 问题 | 可能原因 | 解决方案 |
-|------|---------|---------|
-| LLM 返回空结果 | API Key 失效 / 模型不可用 | 检查 API Key 额度，更换模型 |
-| RAG 索引为空 | SOP 文件缺失 | 确认 `data/sop/` 目录下有 `.txt` 文件 |
-| 图片 OCR 失败 | PaddlePaddle 未正确安装 | `pip install paddlepaddle -i https://mirror.baidu.com/pypi/simple` |
-| 视频 OCR 未安装 | opencv-python 缺失 | `pip install opencv-python` |
+---
+
+## 七、故障排除
+
+| 错误 | 原因 | 解决 |
+|------|------|------|
+| "LLM_API_KEY 未设置" | `.env` 缺失或未配置 | 复制 `.env.example` 为 `.env` 并填入密钥 |
+| OCR 识别为空 | PaddleOCR 模型未下载 | 首次运行会自动下载（需联网），约 5-10 分钟 |
+| 端口被占用 | 8000 端口已被使用 | 修改 `.env` 中 `PORT` 为其他值 |
 | 数据库写入报错 | 路径无写入权限 | 检查 `data/` 目录权限 |
 
-### 6.3 日志查看
-
-系统使用 Python `logging` 模块输出标准日志，在服务终端可见。日志级别：
-
-```
-启动时：INFO 级别显示配置状态
-运行时：ERROR 级别显示故障信息
-调试时：将 config.py 中日志级别改为 DEBUG
-```
-
 ---
 
-## 七、重新构建 RAG 索引
-
-如果更新了 SOP 知识库文件，需要重新构建向量索引：
-
-```python
-# 方式 1：服务启动时自动检测（向量库为空时自动构建）
-# 启动 main.py 即可
-
-# 方式 2：手动调用
-python -c "
-from rag_simple import build_index
-build_index(force_rebuild=True)
-"
-```
-
-> 注意：`force_rebuild=True` 会清空并重建索引。生产环境中建议仅在 SOP 更新时执行。
-
----
-
-## 八、附录
-
-### 8.1 依赖清单
-
-核心依赖及用途：
-
-| 包名 | 用途 |
-|------|------|
-| `fastapi` | Web 框架 |
-| `openai` | LLM API 客户端 |
-| `chromadb` | 向量数据库 |
-| `dashscope` | 阿里云 Embedding API |
-| `paddleocr` | 图片/视频文字识别 |
-| `paddlepaddle` | PaddleOCR 深度学习框架 |
-| `opencv-python` | 视频帧提取与图像预处理 |
-| `httpx` | ERP 异步 HTTP 客户端 |
-| `tenacity` | API 调用重试机制 |
-| `pydantic` | 数据模型校验 |
-| `python-dateutil` | 质保期日期计算 |
-| `uvicorn` | ASGI 服务器 |
-
-### 8.2 端口清单
+## 八、端口清单
 
 | 端口 | 服务 | 说明 |
 |------|------|------|
 | 8000 | 主服务 | FastAPI 客诉处理 API |
-| 8001 | Mock ERP | 模拟质保核验接口 |
-
----
+| 8001 | Mock ERP | 模拟质保核验接口（可选） |
