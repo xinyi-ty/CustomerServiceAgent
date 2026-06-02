@@ -49,6 +49,7 @@ class ChatResponse(BaseModel):
     ticket_created: bool = Field(..., description="是否已自动创建工单")
     ticket_id: Optional[str] = Field(None, description="如果创建了工单，返回工单号")
     urgency_level: Optional[UrgencyLevel] = Field(None, description="诊断出的紧急度")
+    warranty_status: Optional[str] = Field(None, description="质保核验状态 (In_Warranty/Out_of_Warranty/Unknown)")
 
 # ==========================================
 # 3. 工单内部数据结构 (严格约束)

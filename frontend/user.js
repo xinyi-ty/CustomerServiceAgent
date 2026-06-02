@@ -46,7 +46,9 @@ function addMessage(role, content, extra = {}) {
 
     let bubbleHtml = `<div class="bubble">${escapeHtml(content)}`;
     if (extra.ticket_id) {
-        bubbleHtml += `<div class="ticket-badge"><span class="badge-dot"></span>工单已自动创建：${escapeHtml(extra.ticket_id)}</div>`;
+        const urg = (extra.urgency_level || '').toLowerCase();
+        const urgLabel = urg === 'high' ? '紧急' : urg === 'medium' ? '中等' : '普通';
+        bubbleHtml += `<div class="ticket-badge"><span class="badge-dot"></span><span class="badge-text">已创建工单</span><span class="badge-id">${escapeHtml(extra.ticket_id)}</span><span class="badge-urg ${urg}"><span class="urg-dot"></span>${urgLabel}</span></div>`;
     }
     bubbleHtml += `</div>`;
 
@@ -72,7 +74,9 @@ function addAssistantMessageWithThinking(fullRawText, extra = {}) {
     }
     bubbleHtml += `<div class="reply-content"></div>`;
     if (extra.ticket_id) {
-        bubbleHtml += `<div class="ticket-badge"><span class="badge-dot"></span>工单已自动创建：${escapeHtml(extra.ticket_id)}</div>`;
+        const urg = (extra.urgency_level || '').toLowerCase();
+        const urgLabel = urg === 'high' ? '紧急' : urg === 'medium' ? '中等' : '普通';
+        bubbleHtml += `<div class="ticket-badge"><span class="badge-dot"></span><span class="badge-text">已创建工单</span><span class="badge-id">${escapeHtml(extra.ticket_id)}</span><span class="badge-urg ${urg}"><span class="urg-dot"></span>${urgLabel}</span></div>`;
     }
     bubbleHtml += `</div>`;
 
@@ -108,18 +112,25 @@ async function typeTextToReplyContainer(messageDiv, text, speed = 15) {
 }
 
 function showThinkingIndicator() {
-    const thinkingDiv = document.createElement('div');
-    thinkingDiv.className = 'message assistant';
-    thinkingDiv.id = 'thinkingIndicator';
-    thinkingDiv.innerHTML = `<div class="bubble" style="color:#64748b;">正在进行多模态分析与 SOP 检索...</div>`;
-    chatMessages.appendChild(thinkingDiv);
+    const div = document.createElement('div');
+    div.className = 'msg-thinking';
+    div.id = 'thinkingIndicator';
+    div.innerHTML = '<span class="spinner"></span><span class="txt" id="thinkText">正在分析您的问题...</span>';
+    chatMessages.appendChild(div);
     chatMessages.scrollTop = chatMessages.scrollHeight;
-    return thinkingDiv;
+
+    // 8秒后切换提示文字
+    window._thinkTimer = setTimeout(() => {
+        const el = document.getElementById('thinkText');
+        if (el) el.textContent = '正在查询产品信息与处理方案...';
+    }, 8000);
+    return div;
 }
 
 function hideThinkingIndicator() {
-    const indicator = document.getElementById('thinkingIndicator');
-    if (indicator) indicator.remove();
+    clearTimeout(window._thinkTimer);
+    const el = document.getElementById('thinkingIndicator');
+    if (el) el.remove();
 }
 
 // ======================== 工单查询功能 ========================
@@ -202,12 +213,21 @@ async function sendMessage() {
         hideThinkingIndicator();
 
         const assistantFullReply = data.reply || '抱歉，未获得有效回复。';
-        const extra = data.ticket_created ? { ticket_id: data.ticket_id } : {};
 
-        const { messageDiv, replyText } = addAssistantMessageWithThinking(assistantFullReply, extra);
+        // 先渲染气泡（不含工单徽章），等打字动画结束后再追加
+        const { messageDiv, replyText } = addAssistantMessageWithThinking(assistantFullReply, {});
         isStreaming = true;
         await typeTextToReplyContainer(messageDiv, replyText, 15);
         isStreaming = false;
+
+        // 打字完成后追加工单徽章
+        if (data.ticket_created) {
+            const urg = (data.urgency_level || '').toLowerCase();
+            const urgLabel = urg === 'high' ? '紧急' : urg === 'medium' ? '中等' : '普通';
+            const badgeHtml = `<div class="ticket-badge"><span class="badge-dot"></span><span class="badge-text">已创建工单</span><span class="badge-id">${escapeHtml(data.ticket_id)}</span><span class="badge-urg ${urg}"><span class="urg-dot"></span>${urgLabel}</span></div>`;
+            const bubble = messageDiv.querySelector('.bubble');
+            if (bubble) bubble.insertAdjacentHTML('beforeend', badgeHtml);
+        }
 
         conversationHistory.push({ role: 'assistant', content: assistantFullReply });
         chatMessages.scrollTop = chatMessages.scrollHeight;

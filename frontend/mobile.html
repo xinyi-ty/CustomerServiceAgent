@@ -3,309 +3,682 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>智能客诉服务</title>
+  <title>智能客诉助手 - 移动端</title>
   <style>
+    /* ======================= 基础变量 ======================= */
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --sub: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-light: #3b82f6;
+      --success: #10b981;
+      --danger: #ef4444;
+      --warning: #d97706;
+      --shadow: 0 4px 20px rgba(15, 23, 42, 0.05);
+      --glass: rgba(255, 255, 255, 0.75);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
     body {
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
-      background: #f5f7fa;
-      color: #1e293b;
-      line-height: 1.5;
-      min-height: 100vh;
-      padding-bottom: env(safe-area-inset-bottom);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      height: 100vh;
+      overflow: hidden;
       -webkit-font-smoothing: antialiased;
     }
 
-    /* ===== Header ===== */
+    /* ======================= 背景层 ======================= */
+    .grid-bg {
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(15, 23, 42, .03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(15, 23, 42, .03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      z-index: -10;
+    }
+    .glow-bl {
+      position: fixed; bottom: -200px; left: -200px;
+      width: 600px; height: 600px;
+      background: radial-gradient(circle, rgba(37, 99, 235, 0.08), transparent 70%);
+      border-radius: 50%; z-index: -5;
+    }
+
+    /* ======================= App 容器 ======================= */
+    .app {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      position: relative;
+      max-width: 100vw;
+    }
+
+    /* ======================= 顶部导航 ======================= */
     .app-header {
-      background: #2563eb;
-      color: #fff;
-      padding: 16px 20px;
-      padding-top: calc(env(safe-area-inset-top) + 12px);
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.5);
+      padding: 12px 16px;
+      padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      z-index: 20;
+      flex-shrink: 0;
     }
-    .app-header h1 { font-size: 18px; font-weight: 700; letter-spacing: 0.3px; }
-    .app-header p { font-size: 12px; opacity: 0.8; margin-top: 3px; }
-
-    /* ===== Container ===== */
-    .container { padding: 16px; max-width: 480px; margin: 0 auto; }
-
-    /* ===== Card ===== */
-    .card {
-      background: #fff;
-      border-radius: 14px;
-      padding: 18px;
-      margin-bottom: 14px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
-      border: 1px solid #f0f1f3;
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
-    .card-title {
-      font-size: 15px;
+    .header-logo {
+      width: 32px; height: 32px;
+      background: linear-gradient(135deg, var(--primary), #4f46e5);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      color: white; font-weight: 800; font-size: 13px;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+      flex-shrink: 0;
+    }
+    .header-title {
+      font-size: 16px;
       font-weight: 700;
-      margin-bottom: 14px;
-      color: #0f172a;
     }
-    .card-title-border {
-      padding-bottom: 10px;
-      border-bottom: 1px solid #f1f5f9;
-      margin-bottom: 14px;
+    .header-sub {
+      font-size: 10px;
+      color: var(--sub);
+      margin-top: 0px;
+    }
+    .header-status {
+      display: flex; align-items: center; gap: 5px;
+      font-size: 11px; color: var(--success); font-weight: 500;
+    }
+    .header-status::before {
+      content: '';
+      width: 5px; height: 5px;
+      background: var(--success);
+      border-radius: 50%;
+      box-shadow: 0 0 8px var(--success);
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.5); opacity: 0.5; }
+      100% { transform: scale(1); opacity: 1; }
     }
 
-    /* ===== Tab Bar ===== */
+    /* ======================= Tab 导航 ======================= */
     .tab-bar {
       display: flex;
-      background: #eef2f7;
-      border-radius: 10px;
-      padding: 3px;
-      margin-bottom: 14px;
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.3);
+      padding: 0 16px;
+      flex-shrink: 0;
+      z-index: 15;
     }
     .tab-btn {
       flex: 1;
-      padding: 10px 0;
+      padding: 12px 0 10px;
       border: none;
       background: transparent;
       font-size: 14px;
       font-weight: 600;
-      color: #64748b;
-      border-radius: 8px;
+      color: var(--sub);
       cursor: pointer;
-      transition: all 0.2s;
+      position: relative;
+      transition: color 0.2s;
     }
     .tab-btn.active {
-      background: #fff;
-      color: #2563eb;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      color: var(--primary);
+    }
+    .tab-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 20px;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 2px;
+      opacity: 0;
+      transition: all 0.2s;
+    }
+    .tab-btn.active::after {
+      opacity: 1;
+      width: 28px;
     }
     .tab-btn:active { opacity: 0.7; }
 
-    /* ===== Form ===== */
-    .form-group { margin-bottom: 14px; }
-    .form-label {
-      font-size: 13px;
-      font-weight: 600;
-      color: #475569;
-      margin-bottom: 6px;
+    /* ======================= 主内容区 ======================= */
+    .main-content {
+      flex: 1;
+      overflow: hidden;
+      position: relative;
+      min-height: 0;
     }
-    .form-textarea {
-      width: 100%;
-      min-height: 120px;
-      padding: 12px 14px;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      font-size: 15px;
-      font-family: inherit;
-      resize: vertical;
-      outline: none;
-      transition: border-color 0.2s;
-      background: #fafbfc;
-      color: #1e293b;
-    }
-    .form-textarea:focus {
-      border-color: #2563eb;
-      background: #fff;
-      box-shadow: 0 0 0 3px rgba(37,99,235,0.08);
-    }
-    .form-textarea::placeholder { color: #94a3b8; }
-
-    /* ===== File Upload ===== */
-    .file-upload-area {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border: 1px dashed #cbd5e1;
-      border-radius: 10px;
-      background: #fafbfc;
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    .file-upload-area:active { background: #f1f5f9; }
-    .file-upload-area.selected {
-      border-color: #2563eb;
-      border-style: solid;
-      background: #f0f4ff;
-    }
-    .upload-icon-box {
-      width: 40px; height: 40px;
-      border-radius: 10px;
-      background: #eef2ff;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-    }
-    .upload-icon-box svg { width: 20px; height: 20px; stroke: #2563eb; stroke-width: 1.8; fill: none; }
-    .upload-info { flex: 1; min-width: 0; }
-    .upload-info .primary { font-size: 14px; font-weight: 600; color: #1e293b; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .upload-info .secondary { font-size: 12px; color: #94a3b8; margin-top: 1px; }
-    .upload-clear {
-      width: 26px; height: 26px;
-      border-radius: 50%;
-      border: none;
-      background: #fee2e2;
-      color: #dc2626;
-      font-size: 14px;
-      cursor: pointer;
+    .tab-content {
       display: none;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      line-height: 1;
+      height: 100%;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
     }
-    .file-upload-area.selected .upload-clear { display: flex; }
-    #fileInput { display: none; }
-
-    /* ===== Submit Btn ===== */
-    .submit-btn {
-      width: 100%;
-      padding: 15px;
-      background: #2563eb;
-      color: #fff;
-      border: none;
-      border-radius: 12px;
-      font-size: 16px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-    .submit-btn:active { background: #1d4ed8; }
-    .submit-btn:disabled {
-      background: #94a3b8;
-      cursor: not-allowed;
-    }
-
-    /* ===== Urgency Dot ===== */
-    .urgency-dot {
-      display: inline-block;
-      width: 8px; height: 8px;
-      border-radius: 50%;
-      margin-right: 5px;
-      vertical-align: middle;
-    }
-    .urgency-dot.high { background: #dc2626; box-shadow: 0 0 4px rgba(220,38,38,0.3); }
-    .urgency-dot.medium { background: #d97706; }
-    .urgency-dot.low { background: #64748b; }
-    .urgency-label { vertical-align: middle; }
-
-    /* ===== Badge (status) ===== */
-    .badge-status {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 4px;
-      font-size: 11px;
-      font-weight: 600;
-    }
-    .badge-status.pending { background: #fff7ed; color: #9a3412; }
-    .badge-status.done { background: #f0fdf4; color: #166534; }
-
-    /* ===== Ticket List ===== */
-    .ticket-item {
-      padding: 14px 0;
-      border-bottom: 1px solid #f1f5f9;
-    }
-    .ticket-item:last-child { border-bottom: none; }
-    .ticket-header {
+    .tab-content.active {
       display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
+      flex-direction: column;
     }
-    .ticket-id { font-size: 13px; font-weight: 700; font-family: monospace; color: #1e293b; }
-    .ticket-meta { font-size: 12px; color: #64748b; }
-    .ticket-reply {
-      margin-top: 8px;
-      font-size: 13px;
-      color: #475569;
-      background: #f8fafc;
-      padding: 10px 12px;
-      border-radius: 8px;
-      line-height: 1.6;
-      border-left: 3px solid #2563eb;
+    .tab-content::-webkit-scrollbar { width: 4px; }
+    .tab-content::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    /* ======================= 聊天区 (Tab 1) ======================= */
+    #tabChat {
+      flex-direction: column;
+    }
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      scroll-behavior: smooth;
+      -webkit-overflow-scrolling: touch;
+    }
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+    .message {
+      display: flex;
+      gap: 12px;
+      max-width: 92%;
+      animation: fadeUp 0.35s ease;
+    }
+    .message.user {
+      align-self: flex-end;
+      flex-direction: row-reverse;
+    }
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .bubble {
+      padding: 14px 16px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.65;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      white-space: pre-wrap;
       word-break: break-word;
     }
+    .message.assistant .bubble {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top-left-radius: 5px;
+      color: #334155;
+    }
+    .message.user .bubble {
+      background: linear-gradient(135deg, var(--primary), var(--primary-light));
+      color: white;
+      border-top-right-radius: 5px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.25);
+    }
+    .message.user .bubble .file-attach {
+      display: block;
+      font-size: 12px;
+      opacity: 0.85;
+      margin-top: 6px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255,255,255,0.2);
+    }
 
-    /* ===== Search ===== */
-    .search-row {
+    /* AI 思考过程 */
+    .think-container {
+      margin-bottom: 12px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(37, 99, 235, 0.15);
+      background: rgba(248, 250, 252, 0.8);
+    }
+    .think-summary {
+      padding: 10px 14px;
+      background: rgba(37, 99, 235, 0.05);
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--primary);
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.2s;
+    }
+    .think-summary:active { background: rgba(37, 99, 235, 0.08); }
+    .think-content {
+      padding: 14px;
+      font-size: 11px;
+      color: var(--sub);
+      line-height: 1.7;
+      display: none;
+      border-top: 1px dashed rgba(37, 99, 235, 0.1);
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+
+    .reply-content {
+      margin-top: 2px;
+    }
+
+    /* 工单徽章 */
+    .ticket-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 10px;
+      padding: 6px 10px;
+      background: #f0fdf4;
+      border: 1px solid #bbf7d0;
+      border-radius: 8px;
+      font-size: 11px;
+      flex-wrap: wrap;
+    }
+    .ticket-badge .badge-dot {
+      width: 5px; height: 5px; flex-shrink: 0;
+      background: #16a34a; border-radius: 50%;
+      box-shadow: 0 0 6px rgba(22,163,74,0.4);
+      animation: pulse 2s infinite;
+    }
+    .ticket-badge .badge-text { color: #166534; font-weight: 600; font-size: 11px; }
+    .ticket-badge .badge-id { font-weight: 700; color: #166534; font-size: 12px; font-family: monospace; }
+    .ticket-badge .badge-warranty {
+      font-size: 10px; padding: 1px 6px; border-radius: 3px; font-weight: 600;
+      margin-left: auto;
+    }
+    .ticket-badge .badge-warranty.in { background: #dcfce7; color: #166534; }
+    .ticket-badge .badge-warranty.out { background: #fee2e2; color: #991b1b; }
+    .ticket-badge .badge-warranty.unknown { background: #f1f5f9; color: #64748b; }
+    .ticket-badge .badge-urg {
+      display: flex; align-items: center; gap: 3px;
+      font-size: 10px; font-weight: 600;
+    }
+    .ticket-badge .badge-urg .urg-dot {
+      width: 5px; height: 5px; border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    .ticket-badge .badge-urg.high .urg-dot { background: #dc2626; box-shadow: 0 0 6px rgba(220,38,38,0.4); }
+    .ticket-badge .badge-urg.medium .urg-dot { background: #d97706; box-shadow: 0 0 6px rgba(217,119,6,0.4); }
+    .ticket-badge .badge-urg.low .urg-dot { background: #94a3b8; box-shadow: 0 0 6px rgba(148,163,184,0.4); }
+    .ticket-badge .badge-urg.high { color: #dc2626; }
+    .ticket-badge .badge-urg.medium { color: #d97706; }
+    .ticket-badge .badge-urg.low { color: #64748b; }
+
+    /* 正在思考指示器 */
+    .msg-thinking {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 0;
+      max-width: 100%;
+      animation: fadeUp 0.3s ease;
+    }
+    .msg-thinking .spinner {
+      width: 14px; height: 14px; flex-shrink: 0;
+      border: 2px solid #e2e8f0;
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin 0.6s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .msg-thinking .txt {
+      font-size: 12px; color: var(--sub);
+      background: var(--surface); border: 1px dashed #d1d5db;
+      border-radius: 8px; padding: 6px 12px; line-height: 1.3;
+    }
+
+    /* ======================= 输入区 ======================= */
+    .input-area {
+      padding: 6px 12px 12px;
+      padding-bottom: calc(12px + var(--safe-bottom));
+      background: var(--glass);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid rgba(255,255,255,0.3);
+      flex-shrink: 0;
+    }
+
+    .file-preview {
+      font-size: 12px; color: var(--sub);
+      display: flex; align-items: center; gap: 6px;
+      margin-bottom: 6px; padding: 5px 10px;
+      background: #f8fafc; border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+    .file-preview .tag {
+      font-weight: 700; font-size: 10px; padding: 1px 5px;
+      border-radius: 3px; background: #eef2ff; color: var(--primary);
+      flex-shrink: 0;
+    }
+    .file-preview .fname {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .file-preview .fclear {
+      flex-shrink: 0;
+      width: 20px; height: 20px;
+      border: none; border-radius: 50%;
+      background: #fee2e2; color: var(--danger);
+      font-size: 12px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      line-height: 1;
+    }
+    .file-preview:empty { display: none; }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      align-items: flex-end;
+    }
+    .input-wrapper {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 3px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .input-wrapper:focus-within {
+      border-color: var(--primary);
+      box-shadow: 0 2px 12px rgba(37, 99, 235, 0.1);
+    }
+    .input-field {
+      flex: 1;
+      border: none; outline: none; resize: none;
+      font-size: 14px; line-height: 1.5;
+      padding: 8px 10px; font-family: inherit;
+      background: transparent; max-height: 80px;
+      min-height: 36px;
+    }
+    .input-actions {
+      display: flex;
+      align-items: center;
+      gap: 1px;
+      padding: 2px;
+      flex-shrink: 0;
+    }
+    .icon-btn {
+      width: 30px; height: 30px;
+      border: none; border-radius: 8px;
+      background: transparent;
+      color: var(--sub);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+      font-weight: 300;
+      transition: background 0.15s;
+    }
+    .icon-btn:active { background: #e2e8f0; color: var(--text); }
+    .send-btn {
+      width: 32px; height: 32px;
+      border: none; border-radius: 8px;
+      background: var(--primary);
+      color: white;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s, opacity 0.15s;
+      flex-shrink: 0;
+    }
+    .send-btn svg {
+      width: 14px; height: 14px;
+      stroke: currentColor;
+      stroke-width: 2.5;
+      fill: none;
+    }
+    .send-btn:active { opacity: 0.8; }
+    .send-btn:disabled { background: #e2e8f0; }
+
+    /* ======================= 工单查询区 (Tab 2) ======================= */
+    #tabTickets {
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .search-section {
+      flex-shrink: 0;
+    }
+    .search-box {
       display: flex;
       gap: 8px;
     }
     .search-input {
       flex: 1;
       min-width: 0;
-      padding: 11px 12px;
-      border: 1px solid #e2e8f0;
+      padding: 11px 14px;
+      border: 1px solid var(--border);
       border-radius: 10px;
       font-size: 14px;
       outline: none;
-      background: #fafbfc;
+      background: var(--surface);
+      transition: border-color 0.2s;
     }
-    .search-input:focus {
-      border-color: #2563eb;
-      background: #fff;
-    }
+    .search-input:focus { border-color: var(--primary); }
     .search-btn {
       padding: 0 16px;
-      background: #1e293b;
-      color: #fff;
+      background: var(--text);
+      color: white;
       border: none;
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 600;
       cursor: pointer;
       white-space: nowrap;
+      transition: opacity 0.2s;
     }
-    .search-btn:active { opacity: 0.8; }
+    .search-btn:active { opacity: 0.85; }
 
-    /* ===== Empty State ===== */
+    .ticket-list-section {
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .ticket-list-section::-webkit-scrollbar { width: 3px; }
+    .ticket-list-section::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
+    .ticket-list-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .ticket-list-title span {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .ticket-count {
+      font-size: 12px;
+      color: var(--sub);
+      font-weight: 400;
+    }
+
+    .ticket-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+      cursor: pointer;
+      transition: border-color 0.15s;
+    }
+    .ticket-item:active { border-color: var(--primary); }
+    .ticket-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+    .ticket-id { font-size: 13px; font-weight: 700; font-family: monospace; color: var(--text); }
+    .ticket-id-highlight { font-size: 13px; font-weight: 800; font-family: monospace; color: var(--primary); }
+    .ticket-meta-tags {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .urgency-dot {
+      display: inline-block;
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      margin-right: 2px;
+    }
+    .urgency-dot.high { background: #dc2626; box-shadow: 0 0 4px rgba(220,38,38,0.3); }
+    .urgency-dot.medium { background: #d97706; }
+    .urgency-dot.low { background: #64748b; }
+
+    .urgency-label {
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .urgency-label.high { color: #dc2626; }
+    .urgency-label.medium { color: #d97706; }
+    .urgency-label.low { color: #64748b; }
+
+    .status-badge {
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .status-badge.pending { background: #fff7ed; color: #9a3412; }
+    .status-badge.done { background: #f0fdf4; color: #166534; }
+
+    .warranty-badge-mobile {
+      display: inline-block;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .warranty-badge-mobile.in { background: #dcfce7; color: #166534; }
+    .warranty-badge-mobile.out { background: #fee2e2; color: #991b1b; }
+    .warranty-badge-mobile.unknown { background: #f1f5f9; color: #64748b; }
+
+    .ticket-meta-line {
+      font-size: 12px;
+      color: var(--sub);
+      margin-top: 4px;
+    }
+    .ticket-detail {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #f1f5f9;
+      display: none;
+    }
+    .ticket-item.expanded .ticket-detail {
+      display: block;
+    }
+    .detail-row {
+      display: flex;
+      gap: 8px;
+      font-size: 13px;
+      padding: 3px 0;
+    }
+    .detail-label {
+      color: var(--sub);
+      flex-shrink: 0;
+      min-width: 56px;
+      font-size: 12px;
+    }
+    .detail-value {
+      color: var(--text);
+      word-break: break-word;
+      font-size: 12px;
+    }
+    .detail-reply {
+      margin-top: 8px;
+      font-size: 12px;
+      color: #334155;
+      background: #f8fafc;
+      padding: 10px 12px;
+      border-radius: 8px;
+      line-height: 1.6;
+      border-left: 3px solid var(--primary);
+      word-break: break-word;
+      white-space: pre-wrap;
+    }
+
+    .refresh-area {
+      text-align: center;
+      padding: 6px 0 16px;
+    }
+    .refresh-btn {
+      width: 100%;
+      padding: 11px;
+      background: transparent;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--sub);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .refresh-btn:active { background: #f1f5f9; color: var(--text); }
+
+    /* ======================= 空状态 ======================= */
     .empty-state {
       text-align: center;
-      padding: 40px 16px;
+      padding: 40px 20px;
       color: #94a3b8;
     }
-    .empty-state .icon-placeholder {
+    .empty-state .icon-box {
       width: 48px; height: 48px;
-      margin: 0 auto 12px;
+      margin: 0 auto 10px;
       border-radius: 50%;
       background: #f1f5f9;
       display: flex;
       align-items: center;
       justify-content: center;
     }
-    .empty-state .icon-placeholder svg { width: 24px; height: 24px; stroke: #94a3b8; stroke-width: 1.5; fill: none; }
+    .empty-state .icon-box svg { width: 24px; height: 24px; stroke: #94a3b8; stroke-width: 1.5; fill: none; }
     .empty-state .main-msg { font-size: 14px; font-weight: 600; color: #64748b; }
     .empty-state .sub-msg { font-size: 12px; color: #94a3b8; margin-top: 4px; }
 
-    /* ===== Refresh Btn ===== */
-    .refresh-btn {
-      display: block;
-      width: 100%;
-      padding: 11px;
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      color: #475569;
-      cursor: pointer;
-      text-align: center;
-      margin-top: 8px;
+    .loading-state { text-align: center; padding: 32px 20px; }
+    .loading-state .spinner-lg {
+      width: 24px; height: 24px; margin: 0 auto 8px;
+      border: 3px solid #e2e8f0; border-top-color: var(--primary);
+      border-radius: 50%; animation: spin 0.6s linear infinite;
     }
-    .refresh-btn:active { background: #e2e8f0; }
+    .loading-state .txt { font-size: 13px; color: var(--sub); }
 
-    /* ===== Toast ===== */
+    /* ======================= Toast ======================= */
     .toast {
       position: fixed;
-      bottom: 80px;
+      bottom: calc(80px + var(--safe-bottom));
       left: 50%;
       transform: translateX(-50%) translateY(20px);
       background: #1e293b;
       color: #fff;
-      padding: 12px 20px;
+      padding: 10px 18px;
       border-radius: 10px;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 500;
       opacity: 0;
       transition: all 0.3s;
@@ -313,108 +686,110 @@
       pointer-events: none;
       max-width: calc(100vw - 40px);
       text-align: center;
-      line-height: 1.5;
+      line-height: 1.4;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
     .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
-    /* ===== Loading Spinner ===== */
-    .spinner {
-      display: inline-block;
-      width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,0.3);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.6s linear infinite;
-      vertical-align: middle;
-      margin-right: 6px;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ===== Ticket Count ===== */
-    .ticket-count {
-      font-size: 12px;
-      font-weight: 400;
-      color: #94a3b8;
+    /* ======================= 响应式 ======================= */
+    @media (min-width: 600px) {
+      .app {
+        max-width: 480px;
+        margin: 0 auto;
+        border-left: 1px solid var(--border);
+        border-right: 1px solid var(--border);
+        box-shadow: 0 0 40px rgba(0,0,0,0.04);
+      }
     }
   </style>
 </head>
 <body>
+  <div class="grid-bg"></div>
+  <div class="glow-bl"></div>
 
-  <!-- Header -->
-  <header class="app-header">
-    <h1>智能客诉服务</h1>
-    <p>提交故障反馈 · 查询处理进度</p>
-  </header>
-
-  <!-- Main -->
-  <div class="container">
-
-    <!-- Tabs -->
-    <div class="tab-bar">
-      <button class="tab-btn active" data-tab="submit">提交客诉</button>
-      <button class="tab-btn" data-tab="track">进度查询</button>
-    </div>
-
-    <!-- Tab: Submit -->
-    <div id="tabSubmit" class="tab-content">
-      <div class="card">
-        <div class="card-title card-title-border">描述您的问题</div>
-        <div class="form-group">
-          <textarea id="complaintText" class="form-textarea" placeholder="请详细描述您遇到的问题，包括设备型号、故障现象、发生时间等"></textarea>
-        </div>
-
-        <div class="form-group">
-          <div class="form-label">添加凭证（图片或视频，选填）</div>
-          <div id="fileUploadArea" class="file-upload-area">
-            <div class="upload-icon-box">
-              <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            </div>
-            <div class="upload-info">
-              <div class="primary">点击选择文件</div>
-              <div class="secondary">支持 JPG / PNG / MP4，最大 50MB</div>
-            </div>
-            <button id="fileClearBtn" class="upload-clear">&times;</button>
-          </div>
-          <input type="file" id="fileInput" accept="image/*,video/*">
-        </div>
-
-        <button id="submitBtn" class="submit-btn">提交客诉</button>
-      </div>
-    </div>
-
-    <!-- Tab: Track -->
-    <div id="tabTrack" class="tab-content" style="display:none">
-      <div class="card">
-        <div class="card-title card-title-border">查询工单进度</div>
-        <div class="search-row">
-          <input type="text" id="searchTicketInput" class="search-input" placeholder="输入工单号，如 CS-20260602-0001">
-          <button id="searchTicketBtn" class="search-btn">查询</button>
+  <div class="app">
+    <!-- ======================= 顶部导航 ======================= -->
+    <header class="app-header">
+      <div class="header-left">
+        <div class="header-logo">AI</div>
+        <div>
+          <div class="header-title">客诉客服端</div>
+          <div class="header-sub">移动端 · 提交反馈与进度查询</div>
         </div>
       </div>
+      <div class="header-status">在线</div>
+    </header>
 
-      <div class="card">
-        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0;">
-          <span>工单记录</span>
-          <span id="ticketCount" class="ticket-count"></span>
-        </div>
-        <div id="ticketList">
-          <div class="empty-state">
-            <div class="icon-placeholder">
-              <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    <!-- ======================= Tab 导航 ======================= -->
+    <nav class="tab-bar">
+      <button class="tab-btn active" data-tab="chat">智能对话</button>
+      <button class="tab-btn" data-tab="tickets">工单查询</button>
+    </nav>
+
+    <!-- ======================= 主内容 ======================= -->
+    <div class="main-content">
+      <!-- Tab 1: 对话 -->
+      <div id="tabChat" class="tab-content active">
+        <div id="chatMessages" class="messages">
+          <div class="message assistant">
+            <div class="bubble">
+              您好，我是智能客诉助手。<br>
+              您可以描述遇到的问题，或点击下方按钮上传设备故障图片。系统将自动进行 OCR 识别、质保核验，并生成专业处理建议。
             </div>
-            <div class="main-msg">暂无工单记录</div>
-            <div class="sub-msg">提交客诉后，工单将显示在这里</div>
           </div>
         </div>
-        <button id="refreshTicketsBtn" class="refresh-btn">刷新列表</button>
+
+        <div class="input-area">
+          <div id="filePreview" class="file-preview"></div>
+          <div class="input-row">
+            <input type="file" id="chatFile" hidden accept="image/*,video/*">
+            <div class="input-wrapper">
+              <textarea id="chatInput" class="input-field" placeholder="描述您的问题..." rows="1"></textarea>
+              <div class="input-actions">
+                <button id="fileLabel" class="icon-btn" title="上传凭证">+</button>
+                <button id="sendBtn" class="send-btn" disabled>
+                  <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tab 2: 工单查询 -->
+      <div id="tabTickets" class="tab-content">
+        <div class="search-section">
+          <div class="search-box">
+            <input type="text" id="ticketSearchInput" class="search-input" placeholder="输入工单号查询...">
+            <button id="ticketSearchBtn" class="search-btn">查询</button>
+          </div>
+        </div>
+
+        <div class="ticket-list-section">
+          <div class="ticket-list-title">
+            <span>工单记录</span>
+            <span id="ticketCount" class="ticket-count"></span>
+          </div>
+          <div id="ticketList">
+            <div class="empty-state" id="ticketEmptyState">
+              <div class="icon-box">
+                <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+              </div>
+              <div class="main-msg">暂无工单记录</div>
+              <div class="sub-msg">提交客诉后，工单将显示在这里</div>
+            </div>
+          </div>
+          <div class="refresh-area">
+            <button id="refreshTicketsBtn" class="refresh-btn">刷新列表</button>
+          </div>
+        </div>
       </div>
     </div>
-
   </div>
 
-  <!-- Toast -->
   <div id="toast" class="toast"></div>
-
   <script src="mobile.js"></script>
 </body>
 </html>

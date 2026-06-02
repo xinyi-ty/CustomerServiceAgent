@@ -205,7 +205,8 @@ async def chat_endpoint(
             reply=auto_reply,
             ticket_created=True,
             ticket_id=ticket_id,
-            urgency_level=UrgencyLevel(urgency_level)  # 使用枚举类型确保数据规范
+            urgency_level=UrgencyLevel(urgency_level),  # 使用枚举类型确保数据规范
+            warranty_status=warranty_status  # 质保核验状态，前端展示加分项
         )
 
     except Exception as e:
